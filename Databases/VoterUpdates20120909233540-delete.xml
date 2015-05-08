@@ -1,0 +1,41 @@
+<VoterUpdates>
+	<ReportDate>9/9/2012 11:35:40 PM</ReportDate>
+	<VoterList>
+		<VoterUpdate>
+			<ID>9615252</ID>
+			<Party>1</Party>
+			<ResultOfContact>8</ResultOfContact>
+			<Email>fred@rubble.com</Email>
+			<CellPhone></CellPhone>
+			<IsSupporter>True</IsSupporter>
+			<IsVolunteer>False</IsVolunteer>
+			<IsModified>True</IsModified>
+			<Comments></Comments>
+			<ModifiedTime>9/9/2012 11:35:01 PM</ModifiedTime>
+		</VoterUpdate>
+		<VoterUpdate>
+			<ID>2547305</ID>
+			<Party>4</Party>
+			<ResultOfContact>3</ResultOfContact>
+			<Email></Email>
+			<CellPhone></CellPhone>
+			<IsSupporter>True</IsSupporter>
+			<IsVolunteer>True</IsVolunteer>
+			<IsModified>True</IsModified>
+			<Comments></Comments>
+			<ModifiedTime>9/9/2012 11:35:13 PM</ModifiedTime>
+		</VoterUpdate>
+		<VoterUpdate>
+			<ID>3465759</ID>
+			<Party>6</Party>
+			<ResultOfContact>4</ResultOfContact>
+			<Email></Email>
+			<CellPhone></CellPhone>
+			<IsSupporter>False</IsSupporter>
+			<IsVolunteer>True</IsVolunteer>
+			<IsModified>True</IsModified>
+			<Comments></Comments>
+			<ModifiedTime>9/9/2012 11:35:27 PM</ModifiedTime>
+		</VoterUpdate>
+	</VoterList>
+</VoterUpdates>

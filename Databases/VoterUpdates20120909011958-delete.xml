@@ -1,0 +1,29 @@
+<VoterUpdates>
+	<ReportDate>9/9/2012 1:19:58 AM</ReportDate>
+	<VoterList>
+		<VoterUpdate>
+			<ID>3465466</ID>
+			<Party>2</Party>
+			<ResultOfContact>4</ResultOfContact>
+			<Email></Email>
+			<CellPhone></CellPhone>
+			<IsSupporter>True</IsSupporter>
+			<IsVolunteer>False</IsVolunteer>
+			<IsModified>True</IsModified>
+			<Comments></Comments>
+			<ModifiedTime>9/9/2012 1:19:37 AM</ModifiedTime>
+		</VoterUpdate>
+		<VoterUpdate>
+			<ID>3472055</ID>
+			<Party>5</Party>
+			<ResultOfContact>0</ResultOfContact>
+			<Email></Email>
+			<CellPhone></CellPhone>
+			<IsSupporter>True</IsSupporter>
+			<IsVolunteer>False</IsVolunteer>
+			<IsModified>True</IsModified>
+			<Comments></Comments>
+			<ModifiedTime>9/9/2012 1:19:45 AM</ModifiedTime>
+		</VoterUpdate>
+	</VoterList>
+</VoterUpdates>
