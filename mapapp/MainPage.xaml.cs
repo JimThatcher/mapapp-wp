@@ -220,7 +220,8 @@ namespace mapapp
         void menuitemSendChanges_Click(object sender, EventArgs e)
         {
             // App.thisApp.ReportUpdates();
-            this.NavigationService.Navigate(new Uri("/LiveAccessPage.xaml", UriKind.Relative));
+            // this.NavigationService.Navigate(new Uri("/LiveAccessPage.xaml", UriKind.Relative));
+            this.NavigationService.Navigate(new Uri("/DataManagePage.xaml", UriKind.Relative));
         }
 
         void thisApp_PropertyChanged(object sender, PropertyChangedEventArgs e)

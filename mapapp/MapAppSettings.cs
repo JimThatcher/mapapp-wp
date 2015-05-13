@@ -24,9 +24,15 @@ namespace mapapp
         const string stDbName       = "dbname";
         const string stDbStatus     = "dbstat";
         const string stDbDate       = "dbdate";
-        const string stLastUpdate   = "lastup";
+        const string stListDate     = "listdate";
         const string stVoterCount   = "numvoters";
-        const string stUploadDir    = "uploadto";
+        const string stUploadUrl    = "uploadto";
+        const string stDataFormat   = "dataformat";
+        const string stListCheckTime = "lastcheck";
+        const string stDownloaded   = "downloaded";
+
+        // const string stLastUpdated = "updated";
+
 
         // Default values for settings
         const string    defaultDbName   = "VoterData.sdf";
@@ -35,6 +41,14 @@ namespace mapapp
         DateTime  defaultUpdate   = new DateTime(2012, 1, 1);
         const int       defaultCount    = 0;
         const string    defaultUpload   = "me/skydrive";
+        const string    defaultFormat   = "xml";
+
+        const bool      defaultDownload = false;
+
+        // const string defaultUpdated = "Tue, 08 Aug 2012 04:00:00 GMT";
+
+        private DateTime _lastChecked = DateTime.Now;
+        private DateTime _lastModified = new DateTime();
 
         Dictionary<string, Object> defaults;
 
@@ -50,9 +64,19 @@ namespace mapapp
                 defaults.Add(stDbName, defaultDbName);
                 defaults.Add(stDbStatus, defaultDbStat);
                 defaults.Add(stDbDate, defaultDbDate);
-                defaults.Add(stLastUpdate, defaultUpdate);
+                defaults.Add(stListDate, defaultUpdate);
                 defaults.Add(stVoterCount, defaultCount);
-                defaults.Add(stUploadDir, defaultUpload);
+                defaults.Add(stUploadUrl, defaultUpload);
+                defaults.Add(stDataFormat, defaultFormat);
+                defaults.Add(stListCheckTime, _lastChecked);
+                defaults.Add(stDownloaded, defaultDownload);
+                if (settingsStore[stListDate].ToString().Length > 5)
+                {
+                    DateTime temp = DateTime.Now;
+                    bool bSuccess = DateTime.TryParse(settingsStore[stListDate].ToString(), out temp);
+                    if (bSuccess)
+                        _lastModified = temp;
+                }
             }
             catch (Exception e)
             {
@@ -127,17 +151,17 @@ namespace mapapp
         }
 
         /// <summary>
-        /// SkyDrive folder ID for folder that update files should be uploaded to
-        /// By default this will be the user's root folder until a voter data file
+        /// URL or OneDrive folder ID for folder that update files should be uploaded to
+        /// By default this will be the user's OneDrive root folder until a voter data file
         /// is downloaded, then the folder that the voter data file was in becomes
         /// the update upload folder.
         /// </summary>
-        public string UploadFolder
+        public string UploadUrl
         {
-            get { return GetSetting<string>(stUploadDir); }
+            get { return GetSetting<string>(stUploadUrl); }
             set
             {
-                if (UpdateSetting(stUploadDir, value))
+                if (UpdateSetting(stUploadUrl, value))
                     settingsStore.Save();
             }
         }
@@ -175,8 +199,44 @@ namespace mapapp
         /// </summary>
         public DateTime LastUpdateTimestamp
         {
-            get { return GetSetting<DateTime>(stLastUpdate); }
-            set { if (UpdateSetting(stLastUpdate, value)) settingsStore.Save(); }
+            get { return GetSetting<DateTime>(stListDate); }
+            set { if (UpdateSetting(stListDate, value)) settingsStore.Save(); }
+        }
+
+        /// <summary>
+        /// Holds the runtime value of the last time we checked the web for newer results
+        /// Note that this value is not persisted. We will check at startup to see if newer results are available.
+        /// </summary>
+        public DateTime LastChecked
+        {
+            get { return _lastChecked; }
+            set { _lastChecked = value; }
+        }
+
+        /// <summary>
+        /// Date and Time of last update (from HTTP "Last-modified" header)
+        /// </summary>
+        public string LastUpdated
+        {
+            get
+            {
+                // return GetSetting<string>(stListDate);
+                return GetSetting<DateTime>(stListDate).ToString("r");
+            }
+            set
+            {
+                DateTime temp = DateTime.Now;
+                bool bSuccess = DateTime.TryParse(value, out temp);
+                if (bSuccess)
+                {
+                    if (UpdateSetting(stListDate, value))
+                        settingsStore.Save();
+                }
+                else
+                {
+                    Debug.WriteLine("Failed to convert time to DateTime :" + value.ToString());
+                }
+            }
         }
 
         /// <summary>

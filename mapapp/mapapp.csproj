@@ -97,6 +97,9 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="DataManagePage.xaml.cs">
+      <DependentUpon>DataManagePage.xaml</DependentUpon>
+    </Compile>
     <Compile Include="MapAppSettings.cs" />
     <Compile Include="HouseListPage.xaml.cs">
       <DependentUpon>HouseListPage.xaml</DependentUpon>
@@ -134,6 +137,10 @@
     <Page Include="HouseListPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="DataManagePage.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

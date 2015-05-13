@@ -49,5 +49,10 @@ namespace mapapp
         {
             this.NavigationService.Navigate(new Uri("/MainPage.xaml", UriKind.Relative));
         }
+
+        private void btnDataMgmt_Click(object sender, RoutedEventArgs e)
+        {
+            this.NavigationService.Navigate(new Uri("/DataManagePage.xaml", UriKind.Relative));
+        }
     }
 }

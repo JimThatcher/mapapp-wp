@@ -177,9 +177,18 @@ namespace mapapp
                         {
                             // this may be a raw XML file, see if the first element is <VoterFile>
                             fileFront[11] = 0;
-                            string firstElement = fileFront.ToString();
+                            string firstElement = System.Text.Encoding.UTF8.GetString(fileFront, 0, 11);
                             if (firstElement.StartsWith("<VoterFile>"))
                                 fileName = "voters.xml";
+                        }
+                            // TODO: This will need to be adjusted to allow for loading of data with arbitrary field order
+                        else if (fileFront[0] == 'a')
+                        {
+                            // this may be a raw csv file, see if the first label is "timestamp"
+                            fileFront[11] = 0;
+                            string firstField = System.Text.Encoding.UTF8.GetString(fileFront, 0, 11);
+                            if (firstField.StartsWith("address"))
+                                fileName = "voters.csv";
                         }
                         else
                             fileName = "unknown.txt";
@@ -225,7 +234,7 @@ namespace mapapp
 
                 IsolatedStorageFileStream xmlStream = _iso.OpenFile(updateFileName, System.IO.FileMode.Open);
                 client.UploadCompleted += new EventHandler<LiveOperationCompletedEventArgs>(client_UploadCompleted);
-                client.UploadAsync(App.thisApp._settings.UploadFolder, updateFileName, xmlStream, OverwriteOption.Overwrite);
+                client.UploadAsync(App.thisApp._settings.UploadUrl, updateFileName, xmlStream, OverwriteOption.Overwrite);
                 progBar.IsEnabled = true;
                 progBar.IsIndeterminate = true;
                 progBar.Visibility = System.Windows.Visibility.Visible;
@@ -268,7 +277,7 @@ namespace mapapp
                     }
                     else if (selItem.Type == "file")
                     {
-                        App.thisApp._settings.UploadFolder = selItem.Parent;
+                        App.thisApp._settings.UploadUrl = selItem.Parent;
                         client.DownloadProgressChanged += new EventHandler<LiveDownloadProgressChangedEventArgs>(client_DownloadProgressChanged);
                         client.DownloadCompleted += new EventHandler<LiveDownloadCompletedEventArgs>(OnDownloadCompleted);
                         client.DownloadAsync(itemID + "/content");

@@ -244,44 +244,10 @@ namespace mapapp
             {
 
             }
-            /*
-            // now we want to create the database at the same time we load the data into it.
-            using (mapapp.data.VoterFileDataContext db = new mapapp.data.VoterFileDataContext(mapapp.data.VoterFileDataContext.DBConnectionString))
-            {
-                if (db.DatabaseExists() == false)
-                {
-                    //Create the database
-                    db.CreateDatabase();
-                }
-            }
-             * */
             Thread.Sleep(1500);
         }
 
-        // TODO: This is _probably_ the place to change load to pull datafile from TEST interface
-        public void LoadDatabaseFromXmlStream(Stream xmlFile)
-        {
-            if (_settings.DbStatus == DbState.Loaded)
-            {
-                // TODO: Handle other states
-                return;
-            }
-            else
-            {
-                if (App.VotersViewModel != null)
-                {
-                    App.VotersViewModel.StreetList.Clear();
-                    App.VotersViewModel.VoterList.Clear();
-                    App.VotersViewModel = null;
-                }
-                if (_dbLoadThread == null)
-                    _dbLoadThread = new Thread(LoadDatabase);
-                _dbLoadThread.Start(xmlFile);
-                // LoadDatabase(xmlFile);
-            }
-        }
-
-        public void LoadDatabaseFromFile(string xmlFile)
+        public void LoadDatabaseFromFile(string fileName)
         {
             if (_settings.DbStatus == DbState.Loaded)
             {
@@ -300,9 +266,22 @@ namespace mapapp
                     _dbLoadThread = new Thread(LoadDatabase);
 
                 IsolatedStorageFile isf = IsolatedStorageFile.GetUserStoreForApplication();
-                IsolatedStorageFileStream voterFile = isf.OpenFile(xmlFile, FileMode.Open);
-                Stream xmlVoterDataStream = null;
-                if (xmlFile.EndsWith(".zip"))
+                IsolatedStorageFileStream voterFile = isf.OpenFile(fileName, FileMode.Open);
+                Stream voterDataStream = null;
+                Dictionary<String, Stream> voterData = new Dictionary<string, Stream>();
+
+                if (fileName.EndsWith(".xml"))
+                {
+                    voterData.Add("xml", voterFile);
+                    // voterDataStream = voterFile;
+                }
+                else if (fileName.EndsWith(".csv"))
+                {
+                    voterData.Add("csv", voterFile);
+                    // voterDataStream = voterFile;
+                }
+                /*
+                else if (fileName.EndsWith(".zip"))
                 {
                     string voterFileName = "voters.xml";
                     if (voterFile.CanSeek)
@@ -326,23 +305,48 @@ namespace mapapp
                     StreamResourceInfo zipInfo = new StreamResourceInfo(voterFile, "application/zip");
                     StreamResourceInfo streamInfo = Application.GetResourceStream(zipInfo, new Uri(voterFileName, UriKind.Relative));
                     if (streamInfo != null)
-                        xmlVoterDataStream = streamInfo.Stream;
+                        voterDataStream = streamInfo.Stream;
                 }
-                else if (xmlFile.EndsWith(".xml"))
-                {
-                    xmlVoterDataStream = voterFile;
-                }
-                if (xmlVoterDataStream != null)
-                    _dbLoadThread.Start(xmlVoterDataStream);
+                */
+                if (voterData.Count > 0)
+                    _dbLoadThread.Start(voterData);
             }
         }
 
+        public IEnumerable<string> SplitCSV(string input)
+        {
+            System.Text.RegularExpressions.Regex csvSplit = new System.Text.RegularExpressions.Regex("(?:^|,)(\"(?:[^\"]+|\"\")*\"|[^,]*)", System.Text.RegularExpressions.RegexOptions.Compiled);
 
-        public void LoadDatabase(Object xmlFile)
+            foreach (System.Text.RegularExpressions.Match match in csvSplit.Matches(input))
+            {
+                yield return match.Value.TrimStart(new[] { ',', '\"', '\\' }).TrimEnd(new[] { ',', '\"', '\\' });
+            }
+        }
+
+        public XElement GetVoterXmlFromCsv(string headers, string voterCsv)
+        {
+            string[] fieldNames = headers.Split(new[] { ',' });
+            IEnumerable<string> fields = SplitCSV(voterCsv);
+            System.Diagnostics.Debug.Assert(fieldNames.Count() == fields.Count<string>());
+
+            XElement voterXml = new XElement("voter");
+            int i = 0;
+            foreach (string fieldData in fields)
+            {
+                var xField = new XElement(fieldNames[i], fieldData);
+                voterXml.Add(xField);
+                i++;
+            }
+
+            return voterXml;
+        }
+
+        public void LoadDatabase(Object voterDataDict)
         {
             /*
-            <pins>
-              <pin>
+            [XML representation]
+            <voters>
+              <voter>
                 <address>1234 Anystreet</address>
                 <address2></address2>
                 <city>Sammamish</city>
@@ -352,19 +356,33 @@ namespace mapapp
                 <lastname>BOND</lastname>
                 <firstname>JAMES</firstname>
                 <email></email>
-                <precinct>MICHAEL</precinct>
+                <precinct>SAM 45-1234</precinct>
                 <party>1</party>
                 <pvscore><pri>2</pri><gen>4</gen></pvscore>
                 <recid>WA00092212345</recid>
                 <location>47.6161616,-122.0551111</location>
-              </pin>
-            </pins>
+              </voter>
+            </voters>
+             * 
+            or [csv representation]
+            address,address2,city,state,zip,phone,lastname,firstname,HouseholdVoters,email,precinct,party,pri,gen,recid,location
+            1234 Anystreet,,Sammamish,WA,98074,,BOND,"JAMES, GALORE",JAMES and GALORE BOND,,SAM 45-1234,1,2,4,WA00092212345,47.6161616,-122.0551111
             */
+            Stream dataStream = null;
+            String dataType = "unknown";
+            if (voterDataDict is Dictionary<String, Stream>)
+            {
+                Dictionary<String, Stream> voterData = voterDataDict as Dictionary<String, Stream>;
+                dataType = voterData.First().Key;
+                dataStream = voterData.First().Value;
+            }
+
             int nVoters = 0;
             // TODO: If we have an existing database, update voter records for existing voters and add new voter records 
 
             VoterFileDataContext _voterDB = new VoterFileDataContext(string.Format(VoterFileDataContext.DBConnectionString, _settings.DbFileName));
-            if (_settings.DbStatus == DbState.Loaded)
+            // if (_settings.DbStatus == DbState.Loaded) NOTE: Forcing to reload during testing
+            if (false)
             {
                 // TODO: prompt user to reload/overwrite database
                 // TODO: Read database status from app settings
@@ -375,7 +393,6 @@ namespace mapapp
             {
                 try
                 {
-                    // TODO: This is where to load voter list from REST interface instead of xml file
                     if (!_voterDB.DatabaseExists())
                     {
                         App.Log("Creating new database...");
@@ -384,51 +401,116 @@ namespace mapapp
                         App.Log("  Database created");
                     }
 
-                    XDocument loadedData = null;
-
-                    if (xmlFile is Stream)
-                        loadedData = XDocument.Load(xmlFile as Stream);
-                    else
-                        loadedData = XDocument.Load(xmlFile as string);
-
-
-                    IEnumerable<XElement> dbDate = loadedData.Descendants("timestamp");
-                    if (dbDate != null)
-                    {
-                        string dbDateString = dbDate.First<XElement>().Value;
-                        DateTime dbTimeStamp;
-                        if (DateTime.TryParse(dbDateString, out dbTimeStamp))
-                            _settings.DbDate = dbTimeStamp;
-                    }
-                    IEnumerable<XElement> votersNode = loadedData.Descendants("voters");
-                    if (votersNode != null)
+                    if (dataType == "xml")
                     {
 
-                        App.Log("  XML file loaded");
-                        IEnumerable<VoterFileEntry> voters = from query in votersNode.Descendants("voter")
-                                                             select new VoterFileEntry
-                                                             {
-                                                                 FirstName = (string)query.Element("firstname"),
-                                                                 LastName = (string)query.Element("lastname"),
-                                                                 Address = (string)query.Element("address"),
-                                                                 Address2 = (string)query.Element("address2"),
-                                                                 City = (string)query.Element("city"),
-                                                                 State = (string)query.Element("state"),
-                                                                 Zip = (string)query.Element("zip"),
-                                                                 VoterIdString = (string)query.Element("recid"),
-                                                                 PartyString = (string)query.Element("party"),
-                                                                 Precinct = (string)query.Element("precinct"),
-                                                                 PvpString = (string)query.Element("pvscore").Element("pri"),
-                                                                 PvgString = (string)query.Element("pvscore").Element("gen"),
-                                                                 Email = (string)query.Element("email"),
-                                                                 Phone = (string)query.Element("phone"),
-                                                                 Coordinates = (string)query.Element("location"),
-                                                                 ModifiedTime = DateTime.Now
-                                                             };
-                        App.Log("  Query completed");
-                        _settings.DbStatus = DbState.Loading;
-                        foreach (VoterFileEntry voter in voters)
+                        XDocument loadedData = null;
+
+                        loadedData = XDocument.Load(dataStream);
+
+                        IEnumerable<XElement> dbDate = loadedData.Descendants("timestamp");
+                        if (dbDate != null)
                         {
+                            string dbDateString = dbDate.First<XElement>().Value;
+                            DateTime dbTimeStamp;
+                            if (DateTime.TryParse(dbDateString, out dbTimeStamp))
+                                _settings.DbDate = dbTimeStamp;
+                        }
+                        IEnumerable<XElement> votersNode = loadedData.Descendants("voters");
+                        if (votersNode != null)
+                        {
+
+                            App.Log("  XML file loaded");
+                            IEnumerable<VoterFileEntry> voters = from query in votersNode.Descendants("voter")
+                                                                 select new VoterFileEntry
+                                                                 {
+                                                                     FirstName = (string)query.Element("firstname"),
+                                                                     LastName = (string)query.Element("lastname"),
+                                                                     Address = (string)query.Element("address"),
+                                                                     Address2 = (string)query.Element("address2"),
+                                                                     City = (string)query.Element("city"),
+                                                                     State = (string)query.Element("state"),
+                                                                     Zip = (string)query.Element("zip"),
+                                                                     VoterIdString = (string)query.Element("recid"),
+                                                                     PartyString = (string)query.Element("party"),
+                                                                     Precinct = (string)query.Element("precinct"),
+                                                                     PvpString = (string)query.Element("pvscore").Element("pri"),
+                                                                     PvgString = (string)query.Element("pvscore").Element("gen"),
+                                                                     Email = (string)query.Element("email"),
+                                                                     Phone = (string)query.Element("phone"),
+                                                                     Coordinates = (string)query.Element("location"),
+                                                                     ModifiedTime = DateTime.Now
+                                                                 };
+                            App.Log("  Query completed");
+                            _settings.DbStatus = DbState.Loading;
+                            foreach (VoterFileEntry voter in voters)
+                            {
+                                if (0.0 == voter.Latitude || 0.0 == voter.Longitude)
+                                {
+                                    continue;
+                                }
+                                nVoters++;
+                                _voterDB.AllVoters.InsertOnSubmit(voter);
+                            }
+                        }
+                    }
+                    else if (dataType == "csv")
+                    {
+                        // Load voters from rows in csv text
+                        StreamReader csvReader = new StreamReader(dataStream);
+
+                        String voterLine = csvReader.ReadLine();
+                        _settings.DbStatus = DbState.Loading;
+                        App.Log("  Parsing voters from CSV");
+
+                        String headerLine = voterLine;
+                        voterLine = csvReader.ReadLine();
+                        while (voterLine != null)
+                        {
+                            // TODO: Convert each line to an XElement using the first row names as element names. This will allow us to use data without requiring specific field order - just fixed field names.
+                            // address,address2,city,state,zip,phone,lastname,firstname,HouseholdVoters,email,precinct,party,pri,gen,recid,location
+                            //string[] fields = (string[])SplitCSV(voterLine); 
+                            XElement voterElement = GetVoterXmlFromCsv(headerLine, voterLine);
+                            VoterFileEntry voter = new VoterFileEntry
+                                                    {
+                                                        FirstName = (string)voterElement.Element("firstname"),
+                                                        LastName = (string)voterElement.Element("lastname"),
+                                                        Address = (string)voterElement.Element("address"),
+                                                        Address2 = (string)voterElement.Element("address2"),
+                                                        City = (string)voterElement.Element("city"),
+                                                        State = (string)voterElement.Element("state"),
+                                                        Zip = (string)voterElement.Element("zip"),
+                                                        VoterIdString = (string)voterElement.Element("recid"),
+                                                        PartyString = (string)voterElement.Element("party"),
+                                                        Precinct = (string)voterElement.Element("precinct"),
+                                                        PvpString = (string)voterElement.Element("pri"),
+                                                        PvgString = (string)voterElement.Element("gen"),
+                                                        Email = (string)voterElement.Element("email"),
+                                                        Phone = (string)voterElement.Element("phone"),
+                                                        Coordinates = (string)voterElement.Element("location"),
+                                                        ModifiedTime = DateTime.Now
+                                                        /*
+                                                        Address = fields[0],
+                                                        Address2 = fields[1],
+                                                        City = fields[2],
+                                                        State = fields[3],
+                                                        Zip = fields[4],
+                                                        Phone = fields[5],
+                                                        LastName = fields[6],
+                                                        FirstName = fields[7],
+                                                        // HouseholdVoters = fields[8],
+                                                        Email = fields[9],
+                                                        Precinct = fields[10],
+                                                        PartyString = fields[11],
+                                                        PvpString = fields[12],
+                                                        PvgString = fields[13],
+                                                        VoterIdString = fields[14],
+                                                        Coordinates = fields[15],
+                                                        ModifiedTime = DateTime.Now
+                                                        */
+                                                    };
+
+                            voterLine = csvReader.ReadLine();
                             if (0.0 == voter.Latitude || 0.0 == voter.Longitude)
                             {
                                 continue;
@@ -436,6 +518,7 @@ namespace mapapp
                             nVoters++;
                             _voterDB.AllVoters.InsertOnSubmit(voter);
                         }
+                        App.Log("  Parsing voters completed");
                     }
                     App.Log("  Voters submitted to database: " + nVoters.ToString());
                     _voterDB.SubmitChanges(System.Data.Linq.ConflictMode.ContinueOnConflict);
@@ -444,7 +527,7 @@ namespace mapapp
                 }
                 catch (Exception ex)
                 {
-                    App.Log("Exception loading XML to database: " + ex.ToString());
+                    App.Log("Exception loading voters to database: " + ex.ToString());
                 }
             }
         }
