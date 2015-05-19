@@ -32,7 +32,7 @@
 
         <!--TitlePanel contains the name of the application and page title-->
         <StackPanel x:Name="TitlePanel" Margin="12,17,0,0">
-            <TextBlock x:Name="ApplicationTitle" Text="VOTER MAPPING" Style="{StaticResource PhoneTextNormalStyle}"/>
+            <TextBlock x:Name="ApplicationTitle" Text="VOTER MAP" Style="{StaticResource PhoneTextNormalStyle}"/>
             <TextBlock x:Name="PageTitle" Text="voter details" Margin="9,-30,0,0" Style="{StaticResource PhoneTextTitle1Style}"/>
         </StackPanel>
 
@@ -45,11 +45,11 @@
                         <TextBlock FontSize="{StaticResource PhoneFontSizeMedium}" Height="Auto" Foreground="{Binding Party, Converter={StaticResource PartyFgBrushConverter}}" 
                                            Name="txtVoterName" Text="{Binding FullName}" Width="380" Padding="10,2" />
                         <TextBlock FontSize="{StaticResource PhoneFontSizeMedium}" Height="Auto" Foreground="{Binding Party, Converter={StaticResource PartyFgBrushConverter}}" 
-                                           Name="txtPrimary" Width="60" Text="{Binding PerfectVoterPrimary}" />
+                                           Name="txtPrimary" Width="60" Text="{Binding PrimaryVoteHistory}" />
                     </StackPanel>
                     <StackPanel Height="Auto" Name="pnlStreetHistory" Width="440" Orientation="Horizontal">
                         <TextBlock FontSize="{StaticResource PhoneFontSizeMedium}"  Height="Auto" Name="txtAddress" Text="{Binding Address}" Width="380" Padding="10,2" />
-                        <TextBlock FontSize="{StaticResource PhoneFontSizeMedium}"  Height="Auto" Name="txtGeneral" Width="60" Text="{Binding PerfectVoterGeneral}" />
+                        <TextBlock FontSize="{StaticResource PhoneFontSizeMedium}"  Height="Auto" Name="txtGeneral" Width="60" Text="{Binding GeneralVoteHistory}" />
                     </StackPanel>
                     <StackPanel Height="Auto" Name="pnlCityPrecinct" Width="440" Orientation="Horizontal">
                         <TextBlock Height="28" Name="txtCity" Text="{Binding City}" Width="227" Padding="10,2" />
@@ -98,6 +98,7 @@
                         <StackPanel Height="86" Name="pnlCellPhone" Width="440" Orientation="Horizontal">
                             <TextBlock Height="40" Name="lblCell" Text="mobile" Width="81" Padding="10,2" />
                             <TextBox Height="70" InputScope="TelephoneNumber" Name="txtCell" Text="{Binding CellPhone, Mode=TwoWay}" Width="352" />
+                            <!-- TextBox Height="70" Name="txtModified" Text="{Binding ModifiedTime, Mode=TwoWay}" Width="352" Visibility="Collapsed" /-->
                         </StackPanel>
                     </StackPanel>
                 </StackPanel>

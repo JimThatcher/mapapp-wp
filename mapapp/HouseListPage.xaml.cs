@@ -54,17 +54,7 @@ namespace mapapp
         void lstVoters_GroupPickerItemTap(object sender, Telerik.Windows.Controls.GroupPickerItemTapEventArgs e)
         {
             e.DataItemToNavigate = this.lstVoters.Groups.ElementAt(0);
-            foreach (DataGroup group in this.lstVoters.Groups)
-            {
-                foreach (PushpinModel voter in group)
-                {
-                    if (Object.Equals(voter.Street, e.DataItem.ToString()))
-                    {
-                        e.DataItemToNavigate = group;
-                        return;
-                    }
-                }
-            }
+            e.DataItemToNavigate = lstVoters.Groups.FirstOrDefault<DataGroup>(group => Object.Equals(group.Key.ToString(), e.DataItem.ToString()));
         }
 
         private void ApplicationBarIconButtonSortUp_Click(object sender, EventArgs e)
@@ -100,6 +90,7 @@ namespace mapapp
         }
     }
 
+    // This converter converts between boolean true/false data values and control visibility Visible/Collapsed values
     public class BoolVizConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
@@ -116,6 +107,9 @@ namespace mapapp
         }
     }
 
+    // This converter converts between boolean true/false data values and control opacity level (0.4/1.0) values
+    // Currently this is used in the voter list to show voters that have been updated (contacted) with a reduced
+    // opacity so that those voters appear dimmed in the list.
     public class BoolOpaqueConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

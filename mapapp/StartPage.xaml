@@ -34,24 +34,10 @@
             	<LineBreak/>
             	<Run Text="to load your voter data."/>
             </TextBlock>
-            <!-- Button Content="data management" Height="88" HorizontalAlignment="Left" Margin="0,165,0,0" Name="btnSkyDrive" VerticalAlignment="Top" Width="456" FontSize="28" Click="btnSkyDrive_Click" / -->
             <Button Content="data management" Height="88" HorizontalAlignment="Left" Margin="0,165,0,0" x:Name="btnDataMgmt" VerticalAlignment="Top" Width="456" FontSize="28" Click="btnDataMgmt_Click" />
             <Button Content="map" Height="88" HorizontalAlignment="Left" Margin="0,265,0,0" Name="btnMap" VerticalAlignment="Top" Width="456" FontSize="28" IsEnabled="False" Click="btnMap_Click" />
             <Button Content="filter voters" FontSize="28" Height="88" HorizontalAlignment="Left" Margin="0,365,0,0" Name="btnFilter" VerticalAlignment="Top" Width="456" IsEnabled="False" />
             <Button Content="statistics" FontSize="28" Height="88" HorizontalAlignment="Left" Margin="0,465,0,0" Name="btnStats" VerticalAlignment="Top" Width="456" IsEnabled="False" />
         </Grid>
     </Grid>
-
-    <!--Sample code showing usage of ApplicationBar-->
-    <!--<phone:PhoneApplicationPage.ApplicationBar>
-        <shell:ApplicationBar IsVisible="True" IsMenuEnabled="True">
-            <shell:ApplicationBarIconButton IconUri="/Images/appbar_button1.png" Text="Button 1"/>
-            <shell:ApplicationBarIconButton IconUri="/Images/appbar_button2.png" Text="Button 2"/>
-            <shell:ApplicationBar.MenuItems>
-                <shell:ApplicationBarMenuItem Text="MenuItem 1"/>
-                <shell:ApplicationBarMenuItem Text="MenuItem 2"/>
-            </shell:ApplicationBar.MenuItems>
-        </shell:ApplicationBar>
-    </phone:PhoneApplicationPage.ApplicationBar>-->
-
 </phone:PhoneApplicationPage>

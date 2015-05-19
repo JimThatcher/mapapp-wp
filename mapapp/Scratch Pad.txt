@@ -1,0 +1,19 @@
+﻿2) Create a map layer with pushpins for each precinct.
+	On database load, query Distinct precincts
+	foreach precinct, get north/south/east/west and center of voters in precinct
+	Add precinct pin at center of precinct
+3) Create a map layer with pushpins for each street within a given precinct.
+	On database load, query Streets in each precinct
+	foreach street, get north/south/east/west and center of voters on street
+	Add street pin at voter cloasest to center of street
+6) In DataManagePage btnUpload_Click support case where authkey has expired
+10) In VoterData change _voterID/VoterID from long to string
+
+
+
+
+X 1) TODO: Search instances of foreach (particularly pushpins or other elements in enumerable lists) and replace with IEnumerable.FirstOrDefault<itemtype>(item => item.Detail == searchTarget)
+X 4) When data is loaded from data management page, after OK from message box navigate to map page
+X 5) In DataManagePage btnUpload_Click change test @350 to look at settings(authkey)
+X 7) In FindCenterOfVoters() change to support list passed in (Precinct, Street, or all)
+X 8) In FindCenterOfVoters() change to get n/s/e/w using Min and Max Linq functions

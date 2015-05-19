@@ -32,7 +32,7 @@ namespace mapapp
         
         internal const string Id = "AgTD8VcX7TSsg5eldqc4Pmhs0ST2L2GGYt4P9vPJZM9ijZTYsmzCmet-6Va1oX8d";
         private readonly CredentialsProvider _credentialsProvider = new ApplicationIdCredentialsProvider(Id);
-        public static readonly GeoCoordinate DefaultLocation = new GeoCoordinate(47.651664, -122.033827);
+        public static readonly GeoCoordinate DefaultLocation = new GeoCoordinate(47.662929, -122.115863);
         private const double DefaultZoomLevel = 16.0;
         private const double MaxZoomLevel = 21.0;
         private const double MinZoomLevel = 10.0;
@@ -45,6 +45,9 @@ namespace mapapp
         private bool _showPushpins = false;
         private bool _showMe = false;
         private bool _showCar = false;
+
+        // NOTE: This setting is used for testing during development, and should be set to true before compiling a production build
+        private bool _limitVoters = false;
 
         // NOTE: These are rough estimates of the number of degrees covered in one mile
         // in the Redmond, WA area. These should be calculated based on actual latitude
@@ -110,7 +113,8 @@ namespace mapapp
             InitializeComponent();
             DataContext = this;
 
-            _here = new GeoCoordinate();
+            // _here = new GeoCoordinate();
+            _here = DefaultLocation;
 
             Me = new Pushpin();
             Me.Content = "Me";
@@ -164,6 +168,12 @@ namespace mapapp
             ApplicationBarMenuItem menuitemFindCar = new ApplicationBarMenuItem("show car location");
             menuitemFindCar.Click += new EventHandler(menuitemFindCar_Click);
             _mainAppBar.MenuItems.Add(menuitemFindCar);
+            if (_limitVoters == false) // NOTE: This menu item is only useful in test mode when the voter list size is small
+            {
+                ApplicationBarMenuItem menuitemCenterOnVoters = new ApplicationBarMenuItem("center on voters");
+                menuitemCenterOnVoters.Click += new EventHandler(menuitemCenterOnVoters_Click);
+                _mainAppBar.MenuItems.Add(menuitemCenterOnVoters);
+            }
             ApplicationBarMenuItem menuitemSendChanges = new ApplicationBarMenuItem("upload/download data");
             menuitemSendChanges.Click += new EventHandler(menuitemSendChanges_Click);
             _mainAppBar.MenuItems.Add(menuitemSendChanges);
@@ -215,6 +225,33 @@ namespace mapapp
             }
             Car.Location = Me.Location;
             ShowCar = true;
+        }
+
+        void menuitemCenterOnVoters_Click(object sender, EventArgs e)
+        {
+            if (listModels.Count > 0)
+            {
+                GeoCoordinate votersCenter = FindCenterOfVoters(listModels);
+                if (!votersCenter.IsUnknown)
+                    Center = votersCenter;
+            }
+        }
+
+        private GeoCoordinate FindCenterOfVoters(List<PushpinModel> list)
+        {
+            GeoCoordinate locCenter = new GeoCoordinate(Center.Latitude, Center.Longitude);
+            // List<PushpinModel> voters = GetLocalVoters(locCenter);
+
+            double west = list.Min<PushpinModel, double>(vMin => vMin.Location.Longitude); // smallest longitude found in list (or largest absolute value)
+            double east = list.Max<PushpinModel, double>(vMax => vMax.Location.Longitude); // largest longitude found in list (or smallest absolute value)
+            double north = list.Max<PushpinModel, double>(vMax => vMax.Location.Latitude); // largest latitude found in list
+            double south = list.Min<PushpinModel, double>(vMin => vMin.Location.Latitude); // smallest latitude found in list
+
+            double diffLat = north - south;
+            double diffLong = east - west;
+            locCenter.Latitude = south + (diffLat/2);
+            locCenter.Longitude = west + (diffLong/2);
+            return locCenter;
         }
 
         void menuitemSendChanges_Click(object sender, EventArgs e)
@@ -315,7 +352,7 @@ namespace mapapp
                 App.Log("  Loading pushpins and calculating distance...");
                 foreach (PushpinModel p in l)
                 {
-                    //distance calculation
+                    //calculate distance from center of current viewport of map
                     double lat = lr.Center.Latitude - p.Location.Latitude;
                     double lon = lr.Center.Longitude - p.Location.Longitude;
                     double dist = Math.Sqrt((lat * lat) + (lon * lon));
@@ -335,6 +372,7 @@ namespace mapapp
                 }
 
                 App.Log("  Sorting pushpins...");
+                // Sort list of pushpins based on distance from center
                 Comparison<PushpinModel> c = new Comparison<PushpinModel>(SortDistance);
                 l.Sort(c);
                 App.Log("  Done sorting pushpins.");
@@ -361,17 +399,20 @@ namespace mapapp
                     }
 
                     listModels.Add(p);
-
+                    // Check to see if this PushPin in list is more than preset distance from center, break if so
+                    // TODO: While testing, let's not limit pushpins
+                    /*
                     if (false == (west <= p.Location.Longitude && east >= p.Location.Longitude &&
                        north >= p.Location.Latitude && south <= p.Location.Latitude))
                     {
                         break;
                     }
-
+                    // If we have already added 200 pushpins to the map, stop adding them
                     if (total >= 200)
                     {
                         break;
                     }
+                    */
 
                     if (wait.WaitOne(0))
                     {
@@ -470,9 +511,37 @@ namespace mapapp
             double _east = _dataView.East;
             double _west = _dataView.West;
 
+
+            // BEGIN TEST
+            // double west = 0.0; // smallest longitude found in list (or largest absolute value)
+            // double east = 0.0; // largest longitude found in list (or smallest absolute value)
+            // double north = 0.0; // largest latitude found in list
+            // double south = 0.0; // smallest latitude found in list
+
+            IEnumerable<string> precincts = (from v in _voterDB.AllVoters select v.Precinct).Distinct();
+            foreach (string stPrecinct in precincts)
+            {
+                // App.Log(" List includes precinct: " + stPrecinct);
+                List<VoterFileEntry> pList = (from VoterFileEntry vPrecinct in _voterDB.AllVoters where vPrecinct.Precinct == stPrecinct select vPrecinct).ToList();
+                App.Log(String.Format("   There are {0} voters in {1} precinct.", pList.Count, stPrecinct));
+                double west = pList.Min<VoterFileEntry, double>(vMin => vMin.Longitude); // smallest longitude found in list (or largest absolute value)
+                double east = pList.Max<VoterFileEntry, double>(vMax => vMax.Longitude); // largest longitude found in list (or smallest absolute value)
+                double north = pList.Max<VoterFileEntry, double>(vMax => vMax.Latitude); // largest latitude found in list
+                double south = pList.Min<VoterFileEntry, double>(vMin => vMin.Latitude); // smallest latitude found in list
+
+                App.Log(String.Format("    North={0}, South={1}, East={2}, West={3}.", north, south, east, west));
+            }
+            // END TEST
+
             IEnumerable<VoterFileEntry> data = from VoterFileEntry voter in _voterDB.AllVoters
                                                where voter.Latitude <= _north && voter.Latitude >= _south && voter.Longitude >= _west && voter.Longitude <= _east
                                                select voter;
+
+            if (_limitVoters == false)
+            {
+                data = from VoterFileEntry voter in _voterDB.AllVoters
+                       select voter;
+            }
 
             PushpinModel _pin;
             int _counter = 0;
@@ -484,18 +553,21 @@ namespace mapapp
                     continue;
                 }
 
-                // If this record is more than a mile away north or south, ignore it
-                if (_pin.Location.Latitude < _south || _pin.Location.Latitude > _north)
+                if (_limitVoters)
                 {
-                    App.Log("Oops! Query returned voters too far north or south.");
-                    continue;
-                }
+                    // If this record is more than a mile away north or south, ignore it
+                    if (_pin.Location.Latitude < _south || _pin.Location.Latitude > _north)
+                    {
+                        App.Log("Oops! Query returned voters too far north or south.");
+                        continue;
+                    }
 
-                // If this record is more than a mile away east or west, ignore it
-                if (_pin.Location.Longitude < _west || _pin.Location.Longitude > _east)
-                {
-                    App.Log("Oops! Query returned voters too far east or west.");
-                    continue;
+                    // If this record is more than a mile away east or west, ignore it
+                    if (_pin.Location.Longitude < _west || _pin.Location.Longitude > _east)
+                    {
+                        App.Log("Oops! Query returned voters too far east or west.");
+                        continue;
+                    }
                 }
 
                 _counter++;
@@ -521,89 +593,6 @@ namespace mapapp
             _voterDB.Dispose();
             return _list;
         }
-        /*
-        public void LoadPushPins()
-        {
-            double lat1 = -9999.0;
-            double lat2 = -9999.0;
-            double long1 = -9999.0;
-            double long2 = -9999.0;
-            _voterDB = new mapapp.data.VoterFileDataContext(mapapp.data.VoterFileDataContext.DBConnectionString);
-            System.Diagnostics.Debug.Assert(_voterDB.DatabaseExists());
-
-            if (!App.thisApp.IsDbLoaded || me.Location.IsUnknown)
-            {
-                return;
-            }
-            double _north = me.Location.Latitude + _mileLat;
-            double _south = me.Location.Latitude - _mileLat;
-            double _east = me.Location.Longitude + _mileLong;
-            double _west = me.Location.Longitude - _mileLong;
-
-            IEnumerable<VoterFileEntry> data = from VoterFileEntry voter in _voterDB.AllVoters
-                                               where voter.Latitude <= _north && voter.Latitude >= _south && voter.Longitude >= _west && voter.Longitude <= _east
-                                               select voter;
-
-            PushpinModel _pin;
-            int _counter = 0;
-            foreach (VoterFileEntry _v in data)
-            {
-                _pin = new PushpinModel(_v);
-                if (0.0 == _pin.Location.Latitude || 0.0 == _pin.Location.Longitude)
-                {
-                    continue;
-                }
-
-                // If this record is more than a mile away north or south, ignore it
-                if (_pin.Location.Latitude < _south || _pin.Location.Latitude > _north)
-                    continue;
-
-                // If this record is more than a mile away east or west, ignore it
-                if (_pin.Location.Longitude < _west || _pin.Location.Longitude > _east)
-                    continue;
-
-                _counter++;
-                if (-9999.0 == lat1 || _pin.Location.Latitude < lat1)
-                {
-                    lat1 = _pin.Location.Latitude;
-                }
-
-                if (-9999.0 == lat2 || _pin.Location.Latitude > lat2)
-                {
-                    lat2 = _pin.Location.Latitude;
-                }
-
-                if (-9999.0 == long1 || _pin.Location.Longitude < long1)
-                {
-                    long1 = _pin.Location.Longitude;
-                }
-
-                if (-9999.0 == long2 || _pin.Location.Longitude > long2)
-                {
-                    long2 = _pin.Location.Longitude;
-                }
-
-                if (!_pin.Location.IsUnknown)
-                {
-                    tree.AddNode(_pin);
-                    _pin.Visibility = Visibility.Visible;
-                }
-            }
-
-            if (tree.children == null || _counter == 0)
-                return;
-
-            tree.latmin = lat1;
-            tree.latmax = lat2;
-            tree.longmin = long1;
-            tree.longmax = long2;
-
-
-            tree.BuildTree();
-
-
-        }
-*/
 
         private void ChangeMapMode(object o, EventArgs e)
         {

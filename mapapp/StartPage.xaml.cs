@@ -21,8 +21,8 @@ namespace mapapp
             if (App.thisApp._settings.DbStatus == DbState.Loaded)
             {
                 btnMap.IsEnabled = true;
-                btnFilter.IsEnabled = true;
-                btnStats.IsEnabled = true;
+                // btnFilter.IsEnabled = true;
+                // btnStats.IsEnabled = true;
             }
             App.thisApp._settings.PropertyChanged += new System.ComponentModel.PropertyChangedEventHandler(_settings_PropertyChanged);
         }
@@ -34,15 +34,10 @@ namespace mapapp
                 if (App.thisApp._settings.DbStatus == DbState.Loaded)
                 {
                     btnMap.IsEnabled = true;
-                    btnFilter.IsEnabled = true;
-                    btnStats.IsEnabled = true;
+                    // btnFilter.IsEnabled = true;
+                    // btnStats.IsEnabled = true;
                 }
             }
-        }
-
-        private void btnSkyDrive_Click(object sender, RoutedEventArgs e)
-        {
-            this.NavigationService.Navigate(new Uri("/LiveAccessPage.xaml", UriKind.Relative));
         }
 
         private void btnMap_Click(object sender, RoutedEventArgs e)

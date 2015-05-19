@@ -9,7 +9,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using System.Device.Location;
-using Microsoft.Phone.Controls.Maps;
+// using Microsoft.Phone.Controls.Maps;
 using System.Collections.ObjectModel;
 
 namespace mapapp
@@ -76,8 +76,8 @@ namespace mapapp
         // public string RecordID { get; set; }
         public int party { get { return VoterFile.Party; } set { VoterFile.Party = value; } }
         public string precinct { get { return VoterFile.Precinct; } }
-        public int PrimaryVoteHistory { get { return VoterFile.PerfectVoterPrimary; } }
-        public int GeneralVoteHistory { get { return VoterFile.PerfectVoterGeneral; } }
+        public int PrimaryVoteHistory { get { return VoterFile.PrimaryVoteHistory; } }
+        public int GeneralVoteHistory { get { return VoterFile.GeneralVoteHistory; } }
         public bool IsSupporter { get { return VoterFile.IsSupporter; } set { VoterFile.IsSupporter = value; } }
         public bool IsVolunteer { get { return VoterFile.IsVolunteer; } set { VoterFile.IsVolunteer = value; } }
         public string Email { get { return VoterFile.Email; } set { VoterFile.Email = value; } }
@@ -236,9 +236,5 @@ namespace mapapp
                 //Icon = Icon
             };
         }
-
-
-
     }
-
 }

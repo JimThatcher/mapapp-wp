@@ -14,20 +14,43 @@ using System.Globalization;
 using System.Windows.Data;
 using System.ComponentModel;
 using Microsoft.Phone.Shell;
+using mapapp.data;
+
 
 namespace mapapp
 {
     public partial class VoterDetailsPage : PhoneApplicationPage
     {
-        // private bool _showingPartyList = false;
         ApplicationBar _detailsAppBar = new ApplicationBar();
+
+        VoterFileDataContext _voterDB = null;
 
         public VoterDetailsPage()
         {
             InitializeComponent();
             DataContext = App.thisApp.SelectedHouse;
-            // _showingPartyList = false;
-
+            _voterDB = new VoterFileDataContext(string.Format(VoterFileDataContext.DBConnectionString, App.thisApp._settings.DbFileName));
+            if (_voterDB.DatabaseExists())
+            {
+                try
+                {
+                    IQueryable<VoterFileEntry> voterQuery = from voter in _voterDB.AllVoters where voter.VoterID == App.thisApp.SelectedHouse.VoterID select voter;
+                    VoterFileEntry voterToUpdate = voterQuery.FirstOrDefault();
+                    if (voterToUpdate.VoterID == App.thisApp.SelectedHouse.VoterID)
+                    {
+                        DataContext = voterToUpdate;
+                        App.Log(String.Format("Setting Voter Detail page DataContext to voter {0}", voterToUpdate.FullName));
+                    }
+                    else
+                    {
+                        App.Log(String.Format("ERROR: Setting Voter Detail page DataContext to voter {0} failed.", voterToUpdate.FullName));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    App.Log("Exception setting voter as DataContext" + ex.ToString());
+                }
+            }
             _detailsAppBar.Mode = ApplicationBarMode.Default;
             _detailsAppBar.Opacity = 1.0;
             _detailsAppBar.IsVisible = true;
@@ -82,7 +105,7 @@ namespace mapapp
                     pnlEmail.Visibility = System.Windows.Visibility.Collapsed;
                     pnlParty.Visibility = System.Windows.Visibility.Collapsed;
                 }
-                else
+                else 
                 {
                     pnlEmail.Visibility = System.Windows.Visibility.Visible;
                     pnlParty.Visibility = System.Windows.Visibility.Visible;
@@ -92,8 +115,28 @@ namespace mapapp
 
         private void saveButton_Click(object sender, EventArgs e)
         {
-            App.thisApp.SelectedHouse.IsUpdated = true;
-            App.thisApp.UpdateVoter();
+            // If either the email or cell textbox controls had focus when save button was tapped those changes were 
+            // not updated ot the view model (because focus was not lost), so we will do that now.
+            if (txtEmail.Text != ((VoterFileEntry)DataContext).Email)
+            {
+                BindingExpression expression = txtEmail.GetBindingExpression(TextBox.TextProperty);
+                expression.UpdateSource();
+            }
+            if (txtCell.Text != ((VoterFileEntry)DataContext).CellPhone)
+            {
+                BindingExpression expression = txtCell.GetBindingExpression(TextBox.TextProperty);
+                expression.UpdateSource();
+            }
+            if (_voterDB.DatabaseExists())
+            {
+                ((VoterFileEntry)DataContext).ModifiedTime = System.DateTime.Now;
+                ((VoterFileEntry)DataContext).IsUpdated = true;
+                _voterDB.SubmitChanges();
+                App.Log("Submitted changes to database");
+            }
+            else
+                App.Log("ERROR: we don't have a database!");
+
             if (this.NavigationService.CanGoBack)
                 this.NavigationService.GoBack();
         }

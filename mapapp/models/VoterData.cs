@@ -15,9 +15,7 @@ namespace mapapp.data
 
 
         /// <summary>
-        /// Unique Voter ID field - used as primary key. May be the state voter ID or a voter file database unique redcord ID,
-        /// but it must be an integer. State IDs that are numeric with a state prefix, such as WA001234567 must have the text
-        /// prefix removed prior to being set in the VoterFileEntry object
+        /// Unique record ID assigned by the database. This is the primary key.
         /// </summary>
         private long _id;
         [Column(IsPrimaryKey = true, IsDbGenerated = true, DbType = "INT NOT NULL Identity", CanBeNull = false)]
@@ -339,40 +337,40 @@ namespace mapapp.data
         }
 
          /// <summary>
-        /// Perfect Voter score for Primary Elections.
+        /// Primary Election voting history
         /// Indicates the number of times the voter has voted in the previous 4 primary elections.
-        /// A value of 5 indicates that this is a new voter.
+        /// A value of 5 indicates that this is a new voter/no history
         /// </summary>
-        private int _PvPri;
+        private int _PrimaryHistory;
         [Column]
-        public int PerfectVoterPrimary
+        public int PrimaryVoteHistory
         {
-            get { return _PvPri; }
+            get { return _PrimaryHistory; }
             set
             {
-                if (_PvPri != value)
+                if (_PrimaryHistory != value)
                 {
-                    NotifyPropertyChanging("PerfectVoterPrimary");
-                    _PvPri = value;
-                    NotifyPropertyChanged("PerfectVoterPrimary");
+                    NotifyPropertyChanging("PrimaryVoteHistory");
+                    _PrimaryHistory = value;
+                    NotifyPropertyChanged("PrimaryVoteHistory");
                 }
             }
         }
 
-        public string PvpString
+        public string PrimaryVoteHistoryString
         {
-            get { return _PvPri.ToString(); }
+            get { return _PrimaryHistory.ToString(); }
             set
             {
                 int nParsed = 0;
                 if (value.Length > 0)
                 {
                     if (int.TryParse(value, out nParsed))
-                        PerfectVoterPrimary = nParsed;
+                        PrimaryVoteHistory = nParsed;
                 }
                 else
                     nParsed = 5;
-                PerfectVoterPrimary = nParsed;
+                PrimaryVoteHistory = nParsed;
             }
         }
 
@@ -382,36 +380,36 @@ namespace mapapp.data
         /// Indicates the number of times the voter has voted in the previous 4 general elections.
         /// A value of 5 indicates that this is a new voter.
         /// </summary>
-        private int _PvGen;
+        private int _GeneralHistory;
         [Column]
-        public int PerfectVoterGeneral
+        public int GeneralVoteHistory
         {
-            get { return _PvGen; }
+            get { return _GeneralHistory; }
             set
             {
-                if (_PvGen != value)
+                if (_GeneralHistory != value)
                 {
-                    NotifyPropertyChanging("PerfectVoterGeneral");
-                    _PvGen = value;
-                    NotifyPropertyChanged("PerfectVoterGeneral");
+                    NotifyPropertyChanging("GeneralVoteHistory");
+                    _GeneralHistory = value;
+                    NotifyPropertyChanged("GeneralVoteHistory");
                 }
             }
         }
 
-        public string PvgString
+        public string GeneralVoteHistoryString
         {
-            get { return _PvGen.ToString(); }
+            get { return _GeneralHistory.ToString(); }
             set
             {
                 int nParsed = 0;
                 if (value.Length > 0)
                 {
                     if (int.TryParse(value, out nParsed))
-                        PerfectVoterGeneral = nParsed;
+                        GeneralVoteHistory = nParsed;
                 }
                 else
                     nParsed = 5;
-                PerfectVoterGeneral = nParsed;
+                GeneralVoteHistory = nParsed;
             }
         }
 
@@ -553,6 +551,18 @@ namespace mapapp.data
             }
         }
 
+        public string IsSupporterString
+        {
+            get { return _isSupporter.ToString(); }
+            set
+            {
+                if (value == "TRUE" || value == "True")
+                    IsSupporter = true;
+                else
+                    IsSupporter = false;
+            }
+        }
+
         /// <summary>
         /// Indicates whether the voter is willing to volunteer for the campaign
         /// </summary>
@@ -571,6 +581,19 @@ namespace mapapp.data
                 }
             }
         }
+
+        public string IsVolunteerString
+        {
+            get { return _isVolunteer.ToString(); }
+            set
+            {
+                if (value == "TRUE" || value == "True")
+                    IsVolunteer = true;
+                else
+                    IsVolunteer = false;
+            }
+        }
+
 
         /// <summary>
         /// Indicates the result of the doorbell contact from 0 to x.
@@ -606,6 +629,21 @@ namespace mapapp.data
                     _result = value;
                     NotifyPropertyChanged("ResultOfContact");
                 }
+            }
+        }
+
+        public string ResultOfContactString
+        {
+            get { return _result.ToString(); }
+            set
+            {
+                int nParsed = 0;
+                if (value.Length > 0)
+                {
+                    if (int.TryParse(value, out nParsed))
+                        ResultOfContact = nParsed;
+                }
+                ResultOfContact = nParsed;
             }
         }
 

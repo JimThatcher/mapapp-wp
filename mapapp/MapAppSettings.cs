@@ -31,6 +31,11 @@ namespace mapapp
         const string stListCheckTime = "lastcheck";
         const string stDownloaded   = "downloaded";
 
+        const string stUserId       = "userid";
+        const string stAuthKey      = "authkey";
+        const string stLastSync     = "lastsync";
+        // const string stDbHasChanges = "";
+
         // const string stLastUpdated = "updated";
 
 
@@ -44,11 +49,13 @@ namespace mapapp
         const string    defaultFormat   = "xml";
 
         const bool      defaultDownload = false;
+        const string    defaultUserId   = "UserID";
+        const string    defaultAuthKey  = "";
 
         // const string defaultUpdated = "Tue, 08 Aug 2012 04:00:00 GMT";
 
         private DateTime _lastChecked = DateTime.Now;
-        private DateTime _lastModified = new DateTime();
+        // private DateTime _lastModified = new DateTime();
 
         Dictionary<string, Object> defaults;
 
@@ -70,13 +77,9 @@ namespace mapapp
                 defaults.Add(stDataFormat, defaultFormat);
                 defaults.Add(stListCheckTime, _lastChecked);
                 defaults.Add(stDownloaded, defaultDownload);
-                if (settingsStore[stListDate].ToString().Length > 5)
-                {
-                    DateTime temp = DateTime.Now;
-                    bool bSuccess = DateTime.TryParse(settingsStore[stListDate].ToString(), out temp);
-                    if (bSuccess)
-                        _lastModified = temp;
-                }
+                defaults.Add(stUserId, defaultUserId);
+                defaults.Add(stAuthKey, defaultAuthKey);
+                defaults.Add(stLastSync, defaultUpdate);
             }
             catch (Exception e)
             {
