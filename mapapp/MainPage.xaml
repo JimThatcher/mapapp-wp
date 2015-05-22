@@ -55,6 +55,22 @@
                     </my:MapItemsControl.ItemTemplate>
                 </my:MapItemsControl>
                 </my:MapLayer>
+                <my:MapLayer Visibility="{Binding ShowPrecincts, Converter={StaticResource BoolVizFormat}}" >
+                    <my:MapItemsControl  ItemsSource="{Binding Precincts}">
+                        <my:MapItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <my:Pushpin BorderBrush="Green"
+                                            BorderThickness="3"
+                                            FontWeight="Normal"
+                                            Background="Green" 
+                                            Foreground="White" 
+                                            Visibility="{Binding Visibility}" 
+                                            Location="{Binding Center}" 
+                                            Content="{Binding Content}" AllowDrop="False" FontFamily="Courier New" Margin="1" Padding="1" OpacityMask="Black" Hold="Precinct_Hold" />
+                            </DataTemplate>
+                        </my:MapItemsControl.ItemTemplate>
+                    </my:MapItemsControl>
+                </my:MapLayer>
                 <my:MapLayer Name="layerMe" Visibility="{Binding ShowMe, Converter={StaticResource BoolVizFormat}}" >
                     <my:Pushpin Name="mePin" BorderBrush="Red" Content="Me" Location="{Binding CurrentLocation}"
                                     BorderThickness="3" FontWeight="Bold" AllowDrop="False" 

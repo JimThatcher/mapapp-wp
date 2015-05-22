@@ -137,12 +137,15 @@ namespace mapapp
             else
                 App.Log("ERROR: we don't have a database!");
 
+            _voterDB.Dispose();
+
             if (this.NavigationService.CanGoBack)
                 this.NavigationService.GoBack();
         }
 
         private void cancelButton_Click(object sender, EventArgs e)
         {
+            _voterDB.Dispose();
             if (this.NavigationService.CanGoBack)
                 this.NavigationService.GoBack();
         }

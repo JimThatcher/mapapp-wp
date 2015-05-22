@@ -727,183 +727,166 @@ namespace mapapp.data
         #endregion
     }
 
-/*
-    [Table(Name = "VoterUpdate")]
-    public class VoterUpdateInfo : INotifyPropertyChanged, INotifyPropertyChanging
+    [Table(Name = "PrecinctTable")]
+    public class PrecinctTableEntry : INotifyPropertyChanged, INotifyPropertyChanging
     {
         // Version column aids update performance.
         [Column(IsVersion = true)]
         private Binary _version;
 
         /// <summary>
-        /// Unique Voter ID field - used as primary key. This is used as the linking key field to associate
-        /// records in the VoterUpdateInfo table with records in the VoterFileEntry table.
+        /// Unique record ID assigned by the database. This is the primary key.
         /// </summary>
-        private int _voterID;
-        [Column(IsPrimaryKey = true, IsDbGenerated = false, DbType = "INT NOT NULL Identity", CanBeNull = false, AutoSync = AutoSync.OnInsert)]
-        public int VoterID
+        private long _id;
+        [Column(IsPrimaryKey = true, IsDbGenerated = true, DbType = "INT NOT NULL Identity", CanBeNull = false)]
+        public long ID
         {
-            get { return _voterID; }
+            get { return _id; }
             set
             {
-                if (_voterID != value)
+                if (_id != value)
                 {
-                    NotifyPropertyChanging("VoterID");
-                    _voterID = value;
-                    NotifyPropertyChanged("VoterID");
+                    NotifyPropertyChanging("ID");
+                    _id = value;
+                    NotifyPropertyChanged("ID");
                 }
             }
         }
 
         /// <summary>
-        /// Indicates the voter's political party preference as indicated by voter during contact.
-        /// This will override value currently in back-end database
-        /// 0 = Unidentified/undeclared
-        /// 1 = String Republican
-        /// 2 = Leaning Republican
-        /// 3 = Declared Independent or undecided
-        /// 4 = Leaning Democrat
-        /// 5 = Strong Democrat
-        /// 6 = Refused to answer
+        /// Precinct name
         /// </summary>
-        private int _party;
+        private string _name;
         [Column]
-        public int Party
+        public string Name
         {
-            get { return _party; }
+            get { return _name; }
             set
             {
-                if (_party != value)
+                if (_name != value)
                 {
-                    NotifyPropertyChanging("Party");
-                    _party = value;
-                    NotifyPropertyChanged("Party");
+                    NotifyPropertyChanging("Name");
+                    _name = value;
+                    NotifyPropertyChanged("Name");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Northernmost latitude of voter in precinct
+        /// </summary>
+        private double _north;
+        [Column]
+        public double North
+        {
+            get { return _north; }
+            set
+            {
+                if (_north != value)
+                {
+                    NotifyPropertyChanging("North");
+                    _north = value;
+                    NotifyPropertyChanged("North");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Southernmost latitude of voter in precinct
+        /// </summary>
+        private double _south;
+        [Column]
+        public double South
+        {
+            get { return _south; }
+            set
+            {
+                if (_south != value)
+                {
+                    NotifyPropertyChanging("South");
+                    _south = value;
+                    NotifyPropertyChanged("South");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Easternmost longitude of voter in precinct
+        /// </summary>
+        private double _east;
+        [Column]
+        public double East
+        {
+            get { return _east; }
+            set
+            {
+                if (_east != value)
+                {
+                    NotifyPropertyChanging("East");
+                    _east = value;
+                    NotifyPropertyChanged("East");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Westernmost latitude of voter in precinct
+        /// </summary>
+        private double _west;
+        [Column]
+        public double West
+        {
+            get { return _west; }
+            set
+            {
+                if (_west != value)
+                {
+                    NotifyPropertyChanging("West");
+                    _west = value;
+                    NotifyPropertyChanged("West");
                 }
             }
         }
 
 
         /// <summary>
-        /// Opt-in email address for voter
+        /// Latitude of center of precinct
         /// </summary>
-        private string _email;
+        private double _lat;
         [Column]
-        public string Email
+        public double CenterLatitude
         {
-            get { return _email; }
+            get { return _lat; }
             set
             {
-                if (_email != value)
+                if (_lat != value)
                 {
-                    NotifyPropertyChanging("Email");
-                    _email = value;
-                    NotifyPropertyChanged("Email");
+                    NotifyPropertyChanging("CenterLatitude");
+                    _lat = value;
+                    NotifyPropertyChanged("CenterLatitude");
                 }
             }
         }
 
         /// <summary>
-        /// Opt-in Cell phone number for voter
+        /// Longitude of center of precinct
         /// </summary>
-        private string _cellPhone;
+        private double _long;
         [Column]
-        public string CellPhone
+        public double CenterLongitude
         {
-            get { return _cellPhone; }
+            get { return _long; }
             set
             {
-                if (_cellPhone != value)
+                if (_long != value)
                 {
-                    NotifyPropertyChanging("CellPhone");
-                    _cellPhone = value;
-                    NotifyPropertyChanged("CellPhone");
+                    NotifyPropertyChanging("CenterLongitude");
+                    _long = value;
+                    NotifyPropertyChanged("CenterLongitude");
                 }
             }
         }
 
-        /// <summary>
-        /// Voter indicated support for candidate/issue
-        /// </summary>
-        private bool _isSupporter;
-        [Column]
-        public bool IsSupporter
-        {
-            get { return _isSupporter; }
-            set
-            {
-                if (_isSupporter != value)
-                {
-                    NotifyPropertyChanging("IsSupporter");
-                    _isSupporter = value;
-                    NotifyPropertyChanged("IsSupporter");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Indicates whether the voter is willing to volunteer for the campaign
-        /// </summary>
-        private bool _isVolunteer;
-        [Column]
-        public bool IsVolunteer
-        {
-            get { return _isVolunteer; }
-            set
-            {
-                if (_isVolunteer != value)
-                {
-                    NotifyPropertyChanging("IsVolunteer");
-                    _isVolunteer = value;
-                    NotifyPropertyChanged("IsVolunteer");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Indicates the result of the doorbell contact from 0 to x.
-        /// 0 = No answer
-        /// 1 = non-voter answered, no voter present
-        /// 2 = left literature
-        /// 3 = Confirmed voter at address
-        /// 4 = Voter has moved
-        /// 5 = Address is vacant
-        /// 6 = Couldn't find address
-        /// </summary>
-        private int _result;
-        [Column]
-        public int ResultOfContact
-        {
-            get { return _result; }
-            set
-            {
-                if (_result != value)
-                {
-                    NotifyPropertyChanging("ResultOfContact");
-                    _result = value;
-                    NotifyPropertyChanged("ResultOfContact");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Notes about contact with voter
-        /// This may contain predefined tags set by UI checkboxes, plus free-form text.
-        /// </summary>
-        private string _comments;
-        [Column]
-        public string Comments
-        {
-            get { return _comments; }
-            set
-            {
-                if (_comments != value)
-                {
-                    NotifyPropertyChanging("Comments");
-                    _comments = value;
-                    NotifyPropertyChanged("Comments");
-                }
-            }
-        }
 
         #region INotifyPropertyChanged Members
         public event PropertyChangedEventHandler PropertyChanged;
@@ -931,8 +914,194 @@ namespace mapapp.data
         }
         #endregion
     }
-*/
 
+    [Table(Name = "StreetTable")]
+    public class StreetTableEntry : INotifyPropertyChanged, INotifyPropertyChanging
+    {
+        // Version column aids update performance.
+        [Column(IsVersion = true)]
+        private Binary _version;
+
+        /// <summary>
+        /// Unique record ID assigned by the database. This is the primary key.
+        /// </summary>
+        private long _id;
+        [Column(IsPrimaryKey = true, IsDbGenerated = true, DbType = "INT NOT NULL Identity", CanBeNull = false)]
+        public long ID
+        {
+            get { return _id; }
+            set
+            {
+                if (_id != value)
+                {
+                    NotifyPropertyChanging("ID");
+                    _id = value;
+                    NotifyPropertyChanged("ID");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Precinct name
+        /// </summary>
+        private string _name;
+        [Column]
+        public string Name
+        {
+            get { return _name; }
+            set
+            {
+                if (_name != value)
+                {
+                    NotifyPropertyChanging("Name");
+                    _name = value;
+                    NotifyPropertyChanged("Name");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Northernmost latitude of voter on street
+        /// </summary>
+        private double _north;
+        [Column]
+        public double North
+        {
+            get { return _north; }
+            set
+            {
+                if (_north != value)
+                {
+                    NotifyPropertyChanging("North");
+                    _north = value;
+                    NotifyPropertyChanged("North");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Southernmost latitude of voter on street
+        /// </summary>
+        private double _south;
+        [Column]
+        public double South
+        {
+            get { return _south; }
+            set
+            {
+                if (_south != value)
+                {
+                    NotifyPropertyChanging("South");
+                    _south = value;
+                    NotifyPropertyChanged("South");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Easternmost longitude of voter on street
+        /// </summary>
+        private double _east;
+        [Column]
+        public double East
+        {
+            get { return _east; }
+            set
+            {
+                if (_east != value)
+                {
+                    NotifyPropertyChanging("East");
+                    _east = value;
+                    NotifyPropertyChanged("East");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Westernmost latitude of voter on street
+        /// </summary>
+        private double _west;
+        [Column]
+        public double West
+        {
+            get { return _west; }
+            set
+            {
+                if (_west != value)
+                {
+                    NotifyPropertyChanging("West");
+                    _west = value;
+                    NotifyPropertyChanged("West");
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Latitude of center of street
+        /// </summary>
+        private double _lat;
+        [Column]
+        public double CenterLatitude
+        {
+            get { return _lat; }
+            set
+            {
+                if (_lat != value)
+                {
+                    NotifyPropertyChanging("CenterLatitude");
+                    _lat = value;
+                    NotifyPropertyChanged("CenterLatitude");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Longitude of center of street
+        /// </summary>
+        private double _long;
+        [Column]
+        public double CenterLongitude
+        {
+            get { return _long; }
+            set
+            {
+                if (_long != value)
+                {
+                    NotifyPropertyChanging("CenterLongitude");
+                    _long = value;
+                    NotifyPropertyChanged("CenterLongitude");
+                }
+            }
+        }
+
+
+        #region INotifyPropertyChanged Members
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        // Used to notify the page that a data context property changed
+        private void NotifyPropertyChanged(string propertyName)
+        {
+            if (PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+            }
+        }
+        #endregion
+
+        #region INotifyPropertyChanging Members
+        public event PropertyChangingEventHandler PropertyChanging;
+
+        // Used to notify the data context that a data context property is about to change
+        private void NotifyPropertyChanging(string propertyName)
+        {
+            if (PropertyChanging != null)
+            {
+                PropertyChanging(this, new PropertyChangingEventArgs(propertyName));
+            }
+        }
+        #endregion
+    }
 
     public class VoterFileDataContext : DataContext
     {
@@ -945,6 +1114,8 @@ namespace mapapp.data
 
         public Table<VoterFileEntry> AllVoters;
         // public Table<VoterUpdateInfo> VoterUpdates;
+        public Table<PrecinctTableEntry> Precincts;
+        public Table<StreetTableEntry> Streets;
     }
 
 }

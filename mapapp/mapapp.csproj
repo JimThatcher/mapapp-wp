@@ -110,7 +110,6 @@
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
-    <Compile Include="models\SkyDriveDataModel.cs" />
     <Compile Include="models\VoterData.cs" />
     <Compile Include="models\pushpinmodel.cs" />
     <Compile Include="StartPage.xaml.cs">

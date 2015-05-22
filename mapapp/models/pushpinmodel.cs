@@ -237,4 +237,273 @@ namespace mapapp
             };
         }
     }
+
+    public class PrecinctPinModel
+    {
+        public PrecinctPinModel(mapapp.data.PrecinctTableEntry _precinct)
+        {
+            PrecinctEntry = _precinct;
+        }
+
+        public PrecinctPinModel()
+        {
+        }
+
+        private double _north;
+        public double North
+        {
+            get
+            {
+                if (_north != null)
+                    return _north;
+                else
+                {
+                    if (PrecinctEntry != null && PrecinctEntry.North != 0.0)
+                    {
+                        _north = PrecinctEntry.North;
+                    }
+                    else
+                        _north = 0.0;
+                    return _north;
+                }
+            }
+            set { _north = value; }
+        }
+
+        private double _south;
+        public double South
+        {
+            get
+            {
+                if (_south != null)
+                    return _south;
+                else
+                {
+                    if (PrecinctEntry != null && PrecinctEntry.South != 0.0)
+                    {
+                        _south = PrecinctEntry.South;
+                    }
+                    else
+                        _south = 0.0;
+                    return _south;
+                }
+            }
+            set { _south = value; }
+        }
+
+        private double _east;
+        public double East
+        {
+            get
+            {
+                if (_east != null)
+                    return _east;
+                else
+                {
+                    if (PrecinctEntry != null && PrecinctEntry.East != 0.0)
+                    {
+                        _east = PrecinctEntry.East;
+                    }
+                    else
+                        _east = 0.0;
+                    return _east;
+                }
+            }
+            set { _east = value; }
+        }
+
+        private double _west;
+        public double West
+        {
+            get
+            {
+                if (_west != null)
+                    return _west;
+                else
+                {
+                    if (PrecinctEntry != null && PrecinctEntry.West != 0.0)
+                    {
+                        _west = PrecinctEntry.West;
+                    }
+                    else
+                        _west = 0.0;
+                    return _west;
+                }
+            }
+            set { _west = value; }
+        }
+
+        private GeoCoordinate _center;
+        public GeoCoordinate Center
+        {
+            get
+            {
+                if (_center != null)
+                    return _center;
+                else
+                {
+                    _center = new GeoCoordinate();
+                    if (PrecinctEntry != null && PrecinctEntry.CenterLatitude != 0.0)
+                    {
+                        _center.Latitude = PrecinctEntry.CenterLatitude;
+                        _center.Longitude = PrecinctEntry.CenterLongitude;
+
+                    }
+                    return _center;
+                }
+            }
+            set { _center = value; }
+        }
+
+        public bool Valid { get; set; }
+
+        public Visibility Visibility { get; set; }
+        public string Content
+        {
+            get
+            {
+                if (PrecinctEntry != null && PrecinctEntry.Name != null)
+                {
+                    return PrecinctEntry.Name;
+                }
+                else
+                    return "";
+            }
+        }
+        public mapapp.data.PrecinctTableEntry PrecinctEntry { get; set; }
+    }
+    public class StreetPinModel
+    {
+        public StreetPinModel(mapapp.data.StreetTableEntry _street)
+        {
+            StreetEntry = _street;
+        }
+
+        public StreetPinModel()
+        {
+        }
+
+        private double _north;
+        public double North
+        {
+            get
+            {
+                if (_north != null)
+                    return _north;
+                else
+                {
+                    if (StreetEntry != null && StreetEntry.North != 0.0)
+                    {
+                        _north = StreetEntry.North;
+                    }
+                    else
+                        _north = 0.0;
+                    return _north;
+                }
+            }
+            set { _north = value; }
+        }
+
+        private double _south;
+        public double South
+        {
+            get
+            {
+                if (_south != null)
+                    return _south;
+                else
+                {
+                    if (StreetEntry != null && StreetEntry.South != 0.0)
+                    {
+                        _south = StreetEntry.South;
+                    }
+                    else
+                        _south = 0.0;
+                    return _south;
+                }
+            }
+            set { _south = value; }
+        }
+
+        private double _east;
+        public double East
+        {
+            get
+            {
+                if (_east != null)
+                    return _east;
+                else
+                {
+                    if (StreetEntry != null && StreetEntry.East != 0.0)
+                    {
+                        _east = StreetEntry.East;
+                    }
+                    else
+                        _east = 0.0;
+                    return _east;
+                }
+            }
+            set { _east = value; }
+        }
+
+        private double _west;
+        public double West
+        {
+            get
+            {
+                if (_west != null)
+                    return _west;
+                else
+                {
+                    if (StreetEntry != null && StreetEntry.West != 0.0)
+                    {
+                        _west = StreetEntry.West;
+                    }
+                    else
+                        _west = 0.0;
+                    return _west;
+                }
+            }
+            set { _west = value; }
+        }
+
+        private GeoCoordinate _center;
+        public GeoCoordinate Center
+        {
+            get
+            {
+                if (_center != null)
+                    return _center;
+                else
+                {
+                    _center = new GeoCoordinate();
+                    if (StreetEntry != null && StreetEntry.CenterLatitude != 0.0)
+                    {
+                        _center.Latitude = StreetEntry.CenterLatitude;
+                        _center.Longitude = StreetEntry.CenterLongitude;
+
+                    }
+                    return _center;
+                }
+            }
+            set { _center = value; }
+        }
+
+        public bool Valid { get; set; }
+
+        public Visibility Visibility { get; set; }
+        public string Content
+        {
+            get
+            {
+                if (StreetEntry != null && StreetEntry.Name != null)
+                {
+                    return StreetEntry.Name;
+                }
+                else
+                    return "";
+            }
+        }
+        public mapapp.data.StreetTableEntry StreetEntry { get; set; }
+    }
 }

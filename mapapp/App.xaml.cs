@@ -100,6 +100,7 @@ namespace mapapp
                     Log(" Error updating voter record: " + _selectedVoter.FullName + "  : " + ex.ToString());
                 }
             }
+            _voterDB.Dispose();
             return success;
         }
 
@@ -122,6 +123,7 @@ namespace mapapp
                     Log(" Error reporting changes: " + ex.ToString());
                 }
             }
+            _voterDB.Dispose();
             return _bReturn;
         }
 
@@ -209,6 +211,7 @@ namespace mapapp
                     _updatesFileName = "";
                 }
             }
+            _voterDB.Dispose();
             return _updatesFileName;
         }
 
@@ -311,6 +314,8 @@ namespace mapapp
                 {
                     App.VotersViewModel.StreetList.Clear();
                     App.VotersViewModel.VoterList.Clear();
+                    App.VotersViewModel.PrecinctList.Clear();
+                    App.VotersViewModel.NewStreetList.Clear();
                     App.VotersViewModel = null;
                 }
                 if (_dbLoadThread == null)
@@ -318,7 +323,7 @@ namespace mapapp
 
                 IsolatedStorageFile isf = IsolatedStorageFile.GetUserStoreForApplication();
                 IsolatedStorageFileStream voterFile = isf.OpenFile(fileName, FileMode.Open);
-                Stream voterDataStream = null;
+                // Stream voterDataStream = null;
                 Dictionary<String, Stream> voterData = new Dictionary<string, Stream>();
 
                 if (fileName.EndsWith(".xml"))
@@ -454,6 +459,16 @@ namespace mapapp
                         _settings.DbStatus = DbState.Empty;
                         App.Log("  Database created");
                     }
+                    else
+                    {
+                        // TODO: prompt user, then Dump existing database and create a new one
+                        App.Log("WARNING: Deleting existing database...");
+                        _voterDB.DeleteDatabase();
+                        App.Log("Creating new database...");
+                        _voterDB.CreateDatabase();
+                        _settings.DbStatus = DbState.Empty;
+                        App.Log("  Database created");
+                    }
 
                     if (dataType == "xml")
                     {
@@ -565,6 +580,28 @@ namespace mapapp
                     }
                     App.Log("  Voters submitted to database: " + nVoters.ToString());
                     _voterDB.SubmitChanges(System.Data.Linq.ConflictMode.ContinueOnConflict);
+                    App.Log(" Loading Precincts table");
+                    IEnumerable<string> precincts = (from v in _voterDB.AllVoters select v.Precinct).Distinct();
+                    foreach (string precinct in precincts)
+                    {
+                        PrecinctTableEntry thisPrecinct = new PrecinctTableEntry();
+                        thisPrecinct.Name = precinct;
+                        List<VoterFileEntry> pList = (from VoterFileEntry vPrecinct in _voterDB.AllVoters where vPrecinct.Precinct == precinct select vPrecinct).ToList();
+                        App.Log(String.Format("   There are {0} voters in {1} precinct.", pList.Count, precinct));
+                        thisPrecinct.West = pList.Min<VoterFileEntry, double>(vMin => vMin.Longitude); // smallest longitude found in list (or largest absolute value)
+                        thisPrecinct.East = pList.Max<VoterFileEntry, double>(vMax => vMax.Longitude); // largest longitude found in list (or smallest absolute value)
+                        thisPrecinct.North = pList.Max<VoterFileEntry, double>(vMax => vMax.Latitude); // largest latitude found in list
+                        thisPrecinct.South = pList.Min<VoterFileEntry, double>(vMin => vMin.Latitude); // smallest latitude found in list
+                        App.Log(String.Format("Precinct {4} - North={0}, South={1}, East={2}, West={3}.", thisPrecinct.North, thisPrecinct.South, thisPrecinct.East, thisPrecinct.West, thisPrecinct.Name));
+                        double diffLat = thisPrecinct.North - thisPrecinct.South;
+                        double diffLong = thisPrecinct.East - thisPrecinct.West;
+                        thisPrecinct.CenterLatitude = thisPrecinct.South + (diffLat / 2);
+                        thisPrecinct.CenterLongitude = thisPrecinct.West + (diffLong / 2);
+                        _voterDB.Precincts.InsertOnSubmit(thisPrecinct);
+                    }
+                    App.Log("  Submitting precincts to database: ");
+                    _voterDB.SubmitChanges(System.Data.Linq.ConflictMode.ContinueOnConflict);
+
                     App.Log("  Changes committed to database");
                     _settings.DbStatus = DbState.Loaded;
                     _settings.UpdateSetting("lastsync", DateTime.Now);
@@ -677,25 +714,51 @@ namespace mapapp
         }
     }
 
+
+
     public class VoterViewModel : INotifyPropertyChanged
     {
         public VoterViewModel()
         {
-            _nearbyVoters = new ObservableCollection<PushpinModel>();
+            _inViewVoters = new ObservableCollection<PushpinModel>();
         }
 
-        private ObservableCollection<PushpinModel> _nearbyVoters = new ObservableCollection<PushpinModel>();
+        private ObservableCollection<PushpinModel> _inViewVoters = new ObservableCollection<PushpinModel>();
 
         public ObservableCollection<PushpinModel> VoterList
         {
             get
             {
-                return _nearbyVoters;
+                return _inViewVoters;
             }
             set
             {
-                _nearbyVoters = value;
+                _inViewVoters = value;
                 NotifyPropertyChanged("VoterList");
+            }
+        }
+
+        private ObservableCollection<PrecinctPinModel> _precinctList = new ObservableCollection<PrecinctPinModel>();
+
+        public ObservableCollection<PrecinctPinModel> PrecinctList
+        {
+            get { return _precinctList; }
+            set
+            {
+                _precinctList = value;
+                NotifyPropertyChanged("PrecinctList");
+            }
+        }
+
+        private ObservableCollection<StreetPinModel> _streetList = new ObservableCollection<StreetPinModel>();
+
+        public ObservableCollection<StreetPinModel> NewStreetList
+        {
+            get { return _streetList; }
+            set
+            {
+                _streetList = value;
+                NotifyPropertyChanged("NewStreetList");
             }
         }
 

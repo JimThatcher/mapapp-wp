@@ -10,8 +10,6 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using Microsoft.Phone.Controls;
-using Microsoft.Live;
-using Microsoft.Live.Controls;
 using System.IO;
 using System.IO.IsolatedStorage;
 using mapapp.data;
@@ -197,7 +195,6 @@ namespace mapapp
                         Uri voterListUri = new Uri(_baseDataUrl);
                         WebClient webClient = new WebClient();
                         webClient.Headers[HttpRequestHeader.Authorization] = "bearer " + App.thisApp._settings.GetSetting<string>("authkey");
-                        // webClient.Headers["If-modified-since"] = App.thisApp._settings.GetSetting<DateTime>("listdate").ToString("r");
                         webClient.DownloadStringCompleted += new DownloadStringCompletedEventHandler(webClient_DownloadVoterListCompleted);
                         webClient.DownloadProgressChanged += webClient_DownloadProgressChanged;
                         webClient.DownloadStringAsync(voterListUri);
@@ -415,21 +412,6 @@ namespace mapapp
             progBar.IsIndeterminate = false;
             progBar.Value = e.ProgressPercentage;
             System.Diagnostics.Debug.WriteLine("Upload in progress ... " + e.ProgressPercentage.ToString() + " % complete, " + e.BytesReceived.ToString() + " bytes received.");
-        }
-
-        void client_UploadCompleted(object sender, LiveOperationCompletedEventArgs e)
-        {
-            progBar.Minimum = 0;
-            progBar.Maximum = 100;
-            progBar.Value = 100;
-            progBar.IsIndeterminate = false;
-            progBar.IsEnabled = false;
-            progBar.Visibility = System.Windows.Visibility.Collapsed;
-            // TODO: Track upload status in app settings
-            Object fileName = "";
-            e.Result.TryGetValue("name", out fileName);
-            App.Log("Voter updates uploaded to SkyDrive: " + fileName);
-            btnUpload.IsEnabled = false;
         }
     }
 }

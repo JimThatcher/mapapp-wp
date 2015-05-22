@@ -17,3 +17,33 @@ X 4) When data is loaded from data management page, after OK from message box na
 X 5) In DataManagePage btnUpload_Click change test @350 to look at settings(authkey)
 X 7) In FindCenterOfVoters() change to support list passed in (Precinct, Street, or all)
 X 8) In FindCenterOfVoters() change to get n/s/e/w using Min and Max Linq functions
+
+
+System.UnauthorizedAccessException was unhandled
+  HResult=-2147024891
+  Message=Invalid cross-thread access.
+  Source=System.Windows
+  StackTrace:
+       at MS.Internal.XcpImports.CheckThread()
+       at System.Windows.DependencyObject.GetValueInternal(DependencyProperty dp)
+       at System.Windows.FrameworkElement.GetValueInternal(DependencyProperty dp)
+       at System.Windows.Controls.ItemsControl.get_ItemsHost()
+       at System.Windows.Controls.ItemsControl.OnItemsChangedHandler(Object sender, ItemsChangedEventArgs args)
+       at System.Windows.Controls.ItemContainerGenerator.OnItemAdded(Object item, Int32 index, Boolean suppressEvent)
+       at System.Windows.Controls.ItemContainerGenerator.System.Windows.Controls.ICollectionChangedListener.OnCollectionChanged(Object sender, NotifyCollectionChangedEventArgs args)
+       at System.Windows.Controls.WeakCollectionChangedListener.SourceCollectionChanged(Object sender, NotifyCollectionChangedEventArgs e)
+       at System.Collections.Specialized.NotifyCollectionChangedEventHandler.Invoke(Object sender, NotifyCollectionChangedEventArgs e)
+       at System.Windows.Controls.ItemCollection.NotifyCollectionChanged(NotifyCollectionChangedEventArgs e)
+       at System.Windows.Controls.ItemCollection.System.Windows.Controls.ICollectionChangedListener.OnCollectionChanged(Object sender, NotifyCollectionChangedEventArgs e)
+       at System.Windows.Controls.WeakCollectionChangedListener.SourceCollectionChanged(Object sender, NotifyCollectionChangedEventArgs e)
+       at System.Collections.ObjectModel.ObservableCollection`1.OnCollectionChanged(NotifyCollectionChangedEventArgs e)
+       at System.Collections.ObjectModel.ObservableCollection`1.InsertItem(Int32 index, T item)
+       at System.Collections.ObjectModel.Collection`1.Add(T item)
+       at mapapp.MainPage.LoadPrecincts()
+       at mapapp.MainPage.BackgroundThread()
+       at System.Threading.ThreadHelper.ThreadStart_Context(Object state)
+       at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state, Boolean preserveSyncCtx)
+       at System.Threading.ExecutionContext.Run(ExecutionContext executionContext, ContextCallback callback, Object state, Boolean preserveSyncCtx)
+       at System.Threading.ExecutionContext.Run(ExecutionContext executionContext, ContextCallback callback, Object state)
+       at System.Threading.ThreadHelper.ThreadStart()
+  InnerException: 
