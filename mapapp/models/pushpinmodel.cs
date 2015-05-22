@@ -54,7 +54,7 @@ namespace mapapp
         // public string FullContent { get; set; }
         public mapapp.data.VoterFileEntry VoterFile { get; set; }
 
-        public long VoterID
+        public string VoterID
         {
             get { return VoterFile.VoterID; }
         }

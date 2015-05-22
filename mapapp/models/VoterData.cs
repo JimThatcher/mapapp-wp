@@ -34,13 +34,12 @@ namespace mapapp.data
         }
 
         /// <summary>
-        /// Unique Voter ID field - used as primary key. May be the state voter ID or a voter file database unique redcord ID,
-        /// but it must be an integer. State IDs that are numeric with a state prefix, such as WA001234567 must have the text
-        /// prefix removed prior to being set in the VoterFileEntry object
+        /// Unique Voter ID field - used as secondary key. May be the state voter ID or a voter file database unique redcord ID. 
+        /// State IDs that are numeric with a state prefix, such as WA001234567.
         /// </summary>
-        private long _voterID;
+        private string _voterID;
         [Column]
-        public long VoterID
+        public string VoterID
         {
             get { return _voterID; }
             set
@@ -53,7 +52,7 @@ namespace mapapp.data
                 }
             }
         }
-
+/*
         public string VoterIdString
         {
             get { return VoterID.ToString(); }
@@ -80,7 +79,7 @@ namespace mapapp.data
                 }
             }
         }
-
+*/
         /// <summary>
         /// First name of voter
         /// </summary>

@@ -424,7 +424,7 @@ namespace mapapp
             </voters>
              * 
             or [csv representation]
-            address,address2,city,state,zip,phone,lastname,firstname,HouseholdVoters,email,precinct,party,pri,gen,recid,location,resultofcontact,cellphone,issupporter,comments,modifiedtime
+            recid,address,address2,city,state,zip,phone,lastname,firstname,HouseholdVoters,email,precinct,party,pri,gen,location,resultofcontact,cellphone,issupporter,comments,modifiedtime
                     1234 Anystreet,,Sammamish,WA,98074,,BOND,"JAMES, GALORE",JAMES and GALORE BOND,,SAM 45-1234,1,2,4,WA00092212345,"47.6161616,-122.0551111",,,,,
             */
             Stream dataStream = null;
@@ -500,7 +500,7 @@ namespace mapapp
                                                                      City = (string)query.Element("city"),
                                                                      State = (string)query.Element("state"),
                                                                      Zip = (string)query.Element("zip"),
-                                                                     VoterIdString = (string)query.Element("recid"),
+                                                                     VoterID = (string)query.Element("recid"),
                                                                      PartyString = (string)query.Element("party"),
                                                                      Precinct = (string)query.Element("precinct"),
                                                                      PrimaryVoteHistoryString = (string)query.Element("pvscore").Element("pri"),
@@ -541,7 +541,7 @@ namespace mapapp
                         voterLine = csvReader.ReadLine();
                         while (voterLine != null)
                         {
-                            // address,address2,city,state,zip,phone,lastname,firstname,HouseholdVoters,email,precinct,party,pri,gen,recid,location
+                            // recid,address,address2,city,state,zip,phone,lastname,firstname,HouseholdVoters,email,precinct,party,pri,gen,location
                             XElement voterElement = GetVoterXmlFromCsv(headerLine, voterLine);
                             VoterFileEntry voter = new VoterFileEntry
                                                     {
@@ -552,7 +552,7 @@ namespace mapapp
                                                         City = (string)voterElement.Element("city"),
                                                         State = (string)voterElement.Element("state"),
                                                         Zip = (string)voterElement.Element("zip"),
-                                                        VoterIdString = (string)voterElement.Element("recid"),
+                                                        VoterID = (string)voterElement.Element("recid"),
                                                         PartyString = (string)voterElement.Element("party"),
                                                         Precinct = (string)voterElement.Element("precinct"),
                                                         PrimaryVoteHistoryString = (string)voterElement.Element("pri"),
