@@ -43,6 +43,7 @@ namespace mapapp
         {
             InitializeComponent();
             IsolatedStorageFile isf = IsolatedStorageFile.GetUserStoreForApplication();
+            txt_CampaignID.Text = App.thisApp._settings.GetSetting<string>("userid");
             if (isf != null)
             {
                 string voterFile = "";
@@ -111,7 +112,14 @@ namespace mapapp
             }
             else
             {
+                if (!App.thisApp._settings.GetSetting<string>("userid").Equals(txt_CampaignID.Text))
+                {
+                    // The user iD has changed, so don't use the authkey anymore
+                    App.thisApp._settings.UpdateSetting("authkey", "");
+                    App.thisApp._settings.DbStatus = DbState.Unknown;
+                }
                 // We don't have an auth key, so we need to see if we can get one
+                // App.thisApp._settings.UpdateSetting("userid", txt_CampaignID.Text);
                 if (App.thisApp._settings.GetSetting<string>("authkey") == "")
                 {
                     try
@@ -134,7 +142,6 @@ namespace mapapp
                         Uri voterListUri = new Uri(_baseDataUrl);
                         WebClient webClient = new WebClient();
                         webClient.Headers[HttpRequestHeader.Authorization] = "bearer " + App.thisApp._settings.GetSetting<string>("authkey");
-                        // webClient.Headers["If-modified-since"] = App.thisApp._settings.GetSetting<DateTime>("listdate").ToString("r");
                         webClient.DownloadStringCompleted += new DownloadStringCompletedEventHandler(webClient_DownloadVoterListCompleted);
                         webClient.DownloadProgressChanged += webClient_DownloadProgressChanged;
                         webClient.DownloadStringAsync(voterListUri);
@@ -162,14 +169,26 @@ namespace mapapp
         }
 
         /// <summary>
-        /// If this set of results are later than the set stored in isolated storage
-        /// replace the file in isolated storage and parse this set of results
+        /// Event handler for completion of authentication POST as initial step of downloading a voter list.
+        /// If the campaign ID entered by the user is valid the service will provide a JSON object in this response
+        /// that includes the authentication key to use in future calls to the service. If the result is successful
+        /// we store both the campaign ID (entered by the user) and the authentication key (returned in the JSON
+        /// object in this response to the app settings store.
+        /// If this response indicates success we will proceed in this event handler to make the request to
+        /// download the voter list associated with the campaign ID.
         /// </summary>
         /// <param name="sender">The WebClient object on which this request was made and the response received</param>
-        /// <param name="e">The DownloadStringCompletedEventArgs object with the results</param>
+        /// <param name="e">The UploadStringCompletedEventArgs object with the results</param>
         void webClient_UploadAuthCompleted(object sender, UploadStringCompletedEventArgs e)
         {
             string authKey = "";
+            if (e.Error != null)
+            {
+                MessageBox.Show("Unable to download voter list. The ID provided is not valid.", "Authentication failure", MessageBoxButton.OK);
+                return;
+            }
+            // App.Log(e.ToString());
+            // App.Log(e.Result);
             try
             {
                 if (sender is WebClient)
@@ -188,6 +207,7 @@ namespace mapapp
                 }
                 App.Log(string.Format("Login completed. Response is: {0}", e.Result));
 
+                // If we successfully received the authentication key, send the request for the voter list
                 if (!_dataRequested && authKey != "")
                 {
                     try
@@ -220,7 +240,7 @@ namespace mapapp
 
 
         /// <summary>
-        /// If this set of results are later than the set stored in isolated storage
+        /// If there is an existing voter list stored in isolated storage this response event handler will
         /// replace the file in isolated storage and parse this set of results
         /// </summary>
         /// <param name="sender">The WebClient object on which this request was made and the response received</param>
@@ -260,7 +280,7 @@ namespace mapapp
                         fileName = "voters.xml";
                     }
                     // TODO: This will need to be adjusted to allow for loading of data with arbitrary field order
-                    else if (e.Result.StartsWith("recid"))
+                    else if (e.Result.Substring(0, 5).ToLower().StartsWith("recid") || e.Result.Substring(0, 5).ToLower().StartsWith("redid"))
                     {
                         fileName = "voters.csv";
                     }
@@ -290,9 +310,7 @@ namespace mapapp
                         // TODO: Do some work to validate that this is a valid voter data file
 
                         App.thisApp._settings.UploadUrl = _baseDataUrl;
-                        // TODO: The back-end service needs to provide a meaningful "Last-modified" response.
                         App.thisApp._settings.LastUpdated = client.ResponseHeaders["Date"];
-                        // ResponseHeaders["If-modified-since"];
                     }
                     progBar.Value = progBar.Maximum;
                 }
@@ -323,7 +341,6 @@ namespace mapapp
                     _dataLoaded = true;
                     _dataRequested = false;
                     App.thisApp._settings.UpdateSetting("downloaded", true);
-                    // NotifyPropertyChanged("IsDataLoaded");
                     MessageBoxResult result = MessageBox.Show("Voter data download complete.", "Done", MessageBoxButton.OK);
                     this.NavigationService.Navigate(new Uri("/MainPage.xaml", UriKind.Relative));
                 }
@@ -352,7 +369,7 @@ namespace mapapp
             }
             else
             {
-                string updateFileName = App.thisApp.ReportUpdates();
+                string updateFileName = App.thisApp.CreateUpdateFile();
                 IsolatedStorageFile _iso = IsolatedStorageFile.GetUserStoreForApplication();
 
                 IsolatedStorageFileStream updateStream = _iso.OpenFile(updateFileName, System.IO.FileMode.Open);
@@ -413,5 +430,6 @@ namespace mapapp
             progBar.Value = e.ProgressPercentage;
             System.Diagnostics.Debug.WriteLine("Upload in progress ... " + e.ProgressPercentage.ToString() + " % complete, " + e.BytesReceived.ToString() + " bytes received.");
         }
+
     }
 }

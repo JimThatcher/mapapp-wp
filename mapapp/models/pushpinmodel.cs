@@ -85,18 +85,7 @@ namespace mapapp
         public string Comments { get { return VoterFile.Comments; } set { VoterFile.Comments = value; } }
         public int ResultOfContact { get { return VoterFile.ResultOfContact; } set { VoterFile.ResultOfContact = value; } }
 
-        private string _street = null;
-        public string Street 
-        { 
-            get
-            {
-                if ((this.VoterFile != null) && (this.VoterFile.Address != null) && (_street == null || _street.Length <= 0))
-                {
-                    _street = this.VoterFile.Address.Substring(this.VoterFile.Address.IndexOf(' ') + 1);
-                }
-                return _street;
-            }
-        }
+        public string Street { get { return VoterFile.Street; } }
 
         private int _housenum = 0;
         public int HouseNum 

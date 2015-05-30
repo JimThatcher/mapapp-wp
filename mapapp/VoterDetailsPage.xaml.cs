@@ -15,10 +15,21 @@ using System.Windows.Data;
 using System.ComponentModel;
 using Microsoft.Phone.Shell;
 using mapapp.data;
+using Newtonsoft.Json;
 
 
 namespace mapapp
 {
+    public class UpdateResult
+    {
+        public string VersionTag { get; set; }
+        public UpdateResult() { }
+        public UpdateResult(string version)
+        {
+            VersionTag = version;
+        }
+    }
+
     public partial class VoterDetailsPage : PhoneApplicationPage
     {
         ApplicationBar _detailsAppBar = new ApplicationBar();
@@ -127,6 +138,11 @@ namespace mapapp
                 BindingExpression expression = txtCell.GetBindingExpression(TextBox.TextProperty);
                 expression.UpdateSource();
             }
+            if (txtComments.Text != ((VoterFileEntry)DataContext).Comments)
+            {
+                BindingExpression expression = txtComments.GetBindingExpression(TextBox.TextProperty);
+                expression.UpdateSource();
+            }
             if (_voterDB.DatabaseExists())
             {
                 ((VoterFileEntry)DataContext).ModifiedTime = System.DateTime.Now;
@@ -138,6 +154,10 @@ namespace mapapp
                 App.Log("ERROR: we don't have a database!");
 
             _voterDB.Dispose();
+            // PostUpdate() will attempt to post this update (and any outstanding updates) if there is network access.
+            // If the update fails, then the next change will trigger another call to PostUpdate(), which will attempt 
+            // to post that update and this one.
+            PostUpdate();
 
             if (this.NavigationService.CanGoBack)
                 this.NavigationService.GoBack();
@@ -149,6 +169,59 @@ namespace mapapp
             if (this.NavigationService.CanGoBack)
                 this.NavigationService.GoBack();
         }
+
+        private void PostUpdate()
+        {
+            // TODO: Provide an option to only update if WiFi is available
+            // Microsoft.Phone.Net.NetworkInformation.DeviceNetworkInformation.IsWiFiEnabled;
+            // use DeviceNetworkInformation.NetworkAvailabilityChanged Event
+            if (App.thisApp.DbHasUpdates() && Microsoft.Phone.Net.NetworkInformation.DeviceNetworkInformation.IsNetworkAvailable)
+            {
+                string updateContent = App.thisApp.GetUpdateString();
+
+                if (updateContent.Length > 40) // This is an arbitary stab at verifying that there is something to report
+                {
+                    try
+                    {
+                        Uri voterListUri = new Uri(App.thisApp._settings.UploadUrl);
+
+                        WebClient webClient = new WebClient();
+                        webClient.Headers[HttpRequestHeader.ContentType] = "application/text";
+                        webClient.Headers[HttpRequestHeader.ContentLength] = updateContent.Length.ToString();
+                        webClient.Headers[HttpRequestHeader.Authorization] = "bearer " + App.thisApp._settings.GetSetting<string>("authkey");
+                        webClient.UploadStringCompleted += new UploadStringCompletedEventHandler(AutoUpdatePostCompleted);
+                        App.Log("Posting update ... ");
+                        webClient.UploadStringAsync(voterListUri, "POST", updateContent);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine(ex.ToString());
+                    }
+                }
+            }
+        }
+
+        void AutoUpdatePostCompleted(object sender, UploadStringCompletedEventArgs e)
+        {
+            string size = "0";
+            try
+            {
+                if (sender is WebClient)
+                {
+                    WebClient wc = sender as WebClient;
+                    UpdateResult result = JsonConvert.DeserializeObject<UpdateResult>(e.Result);
+                    if (result != null && result.VersionTag.Length > 0)
+                    {
+                        App.thisApp._settings.UpdateSetting("lastsync", DateTime.Now);
+                    }
+                }
+                App.Log(string.Format("Uploaded {0} bytes. Response is: {1}", size, e.Result));
+            }
+            catch (Exception ex)
+            {
+                App.Log("Problem logging results of upload: " + ex.ToString());
+            }
+        }    
     }
 
     public class ResultListConverter : IValueConverter

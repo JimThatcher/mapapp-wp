@@ -49,7 +49,7 @@ namespace mapapp
         const string    defaultFormat   = "xml";
 
         const bool      defaultDownload = false;
-        const string    defaultUserId   = "UserID";
+        const string    defaultUserId   = "";
         const string    defaultAuthKey  = "";
 
         // const string defaultUpdated = "Tue, 08 Aug 2012 04:00:00 GMT";
@@ -80,6 +80,8 @@ namespace mapapp
                 defaults.Add(stUserId, defaultUserId);
                 defaults.Add(stAuthKey, defaultAuthKey);
                 defaults.Add(stLastSync, defaultUpdate);
+                // HACK: for my data header error 
+                defaults.Add("_trhack", false);
             }
             catch (Exception e)
             {

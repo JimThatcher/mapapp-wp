@@ -31,6 +31,7 @@ namespace mapapp
     {
         
         internal const string Id = "AgTD8VcX7TSsg5eldqc4Pmhs0ST2L2GGYt4P9vPJZM9ijZTYsmzCmet-6Va1oX8d";
+        internal const string _AuthToken = "__HvqiXBgCqUsM_dihQVrQ"; // Map Service AppId = d9a77332-5306-49fc-b27e-964d7e87f46f
         private readonly CredentialsProvider _credentialsProvider = new ApplicationIdCredentialsProvider(Id);
         public static readonly GeoCoordinate DefaultLocation = new GeoCoordinate(47.662929, -122.115863);
         private const double DefaultZoomLevel = 16.0;
@@ -42,9 +43,11 @@ namespace mapapp
         GeoCoordinateWatcher watcher;
         private bool firstfind = true;
         List<PushpinModel> listModels = new List<PushpinModel>();
-        List<PrecinctPinModel> precinctList = new List<PrecinctPinModel>();
+        // List<PrecinctPinModel> precinctList = new List<PrecinctPinModel>();
         private bool _showPushpins = false;
+        private bool _showDetails = false;
         private bool _showPrecincts = true;
+        private bool _showStreets = false;
         private bool _showMe = false;
         private bool _showCar = false;
 
@@ -61,7 +64,7 @@ namespace mapapp
         private List<PushpinModel> _dataViewPins = new List<PushpinModel>();
         private String _PrecinctFilter = "";
         private String _StreetFilter = "";
-        private int _MaxVotersInView = 300; // NOTE: This is an arbitrary value that can be adjusted based on app performance with larger numbers of voter pins visible.
+        private int _MaxVotersInView = 600; // NOTE: This is an arbitrary value that can be adjusted based on app performance with larger numbers of voter pins visible.
        
         private bool follow = true;
         Thread backThread;
@@ -199,7 +202,6 @@ namespace mapapp
                 App.Log("DB already loaded. Starting background thread...");
                 // LoadPrecincts();
                 backThread.Start();
-                ShowPushpins = true;
                 wait.Set();
             }
             else
@@ -301,183 +303,128 @@ namespace mapapp
                     return;
                 }
 
-                if (precinctList.Count == 0)
+                try
                 {
-                    App.Log("  Invoking LoadPrecincts...");
-                    Dispatcher.BeginInvoke(LoadPrecincts);
-                }
-
-                LocationRect lr = Map.BoundingRectangle;
-                // _lastZoom = zoomlevel;
-
-                if (lr.Equals(_lastRect)) // NOTE: the rect can only be equal if both center and zoom level are unchanged.
-                {
-                    App.Log("  We haven't moved, continuing...");
-                    continue;
-                }
-
-                // LocationRect alr = lr;
-
-                bool bfullcontent = false;
-                if (zoomlevel < 15.0)
-                {
-                    App.Log("   Zoomed out too far - continuing");
-                    continue;
-                }
-
-                if (zoomlevel > 18.0)
-                {
-                    bfullcontent = true;
-                }
-                // List<PushpinModel> l = tree.Search(lr.South, lr.North, lr.West, lr.East);
-                App.Log("    Made it through prelims - still here.");
-                IEnumerable<PushpinModel> selectedVoters = listModels.AsEnumerable();
-
-                if (!_dataView.IsWithinView(lr))
-                {
-                    App.Log("  Calling GetVoterList...");
-                    selectedVoters = GetVoterList();
-                    App.Log(String.Format(" {0} voters are in current voter list.", selectedVoters.Count()));
-                    App.Log("  GetVoterList call completed.");
-                }
-                else
-                {
-                    App.Log("  Still within current dataview, skipping call to GetLocalVoters.");
-                    if (lr.Center == _lastRect.Center && zoomlevel == _lastZoom)
+                    if (Precincts.Count == 0)
                     {
-                        App.Log("   Still in same location. continuing...");
+                        App.Log("  Invoking LoadPrecincts...");
+                        Dispatcher.BeginInvoke(LoadPrecincts);
+                    }
+
+                    if (Streets.Count == 0)
+                    {
+                        App.Log("  Invoking LoadStreets...");
+                        Dispatcher.BeginInvoke(LoadStreets);
+                    }
+
+                    LocationRect lr = Map.BoundingRectangle;
+
+                    if (lr.Equals(_lastRect)) // NOTE: the rect can only be equal if both center and zoom level are unchanged.
+                    {
+                        App.Log("  We haven't moved, continuing...");
                         continue;
                     }
-                }
 
-                _lastRect = lr;
-                _lastZoom = zoomlevel;
-                // IEnumerable<PushpinModel> selectedVoters = _dataViewPins.ToList<PushpinModel>();
-                // Now filter on precinct if set
-                if (_PrecinctFilter != "")
-                {
-                    // _dataViewPins = from <PushpinModel> voter in _dataViewPins where voter.
-                    selectedVoters = from PushpinModel aVoter in selectedVoters where aVoter.precinct == _PrecinctFilter select aVoter;
-                    App.Log(String.Format(" {0} voters are in {1} precinct.", selectedVoters.Count(), _PrecinctFilter));
-                }
-                // Now filter on street if selected
-                if (_StreetFilter != "")
-                {
-                    selectedVoters = from PushpinModel aVoter in selectedVoters where aVoter.Street == _StreetFilter select aVoter;
-                    App.Log(String.Format(" {0} voters are in {1} precinct and live on {2}.", selectedVoters.Count(), _PrecinctFilter, _StreetFilter));
-                }
-                // If resulting list is still more than preset limit (do 300 for now) then filter to nearest 300
-                if (selectedVoters.Count() > _MaxVotersInView)
-                {
-                    _dataViewPins = GetViewVoterList(lr.Center, selectedVoters);
-                }
-                else
-                    _dataViewPins = selectedVoters.ToList();
+                    bool bfullcontent = false;
+                    if (_showDetails)
+                    {
+                        bfullcontent = true;
+                    }
 
-                List<PushpinModel> l = new List<PushpinModel>(_dataViewPins.AsEnumerable());
+                    App.Log("    Made it through prelims - still here.");
+                    IEnumerable<PushpinModel> selectedVoters = listModels.AsEnumerable();
 
-                int total = 0;
+                    if (true) // (!_dataView.IsWithinView(lr)) NOTE: Quick hack for TechRoanoke conference
+                    {
+                        App.Log("  Calling GetVoterList...");
+                        selectedVoters = GetVoterList();
+                        App.Log(String.Format(" {0} voters are in current voter list.", selectedVoters.Count()));
+                        App.Log("  GetVoterList call completed.");
+                    }
+                    else
+                    {
+                        App.Log("  Still within current dataview, skipping call to GetLocalVoters.");
+                        if (lr.Center == _lastRect.Center && zoomlevel == _lastZoom)
+                        {
+                            App.Log("   Still in same location. continuing...");
+                            continue;
+                        }
+                    }
 
-                if (wait.WaitOne(0))
-                {
-                    App.Log("  Wait was not signaled, continuing.");
-                    continue;
-                }
+                    _lastRect = lr;
+                    _lastZoom = zoomlevel;
 
-                // If the voter list in DB contains more than 500 (large precinct voter count) we need to reduce the number of those in the current view
-                // TODO: Can this be accomplished through query filter?
-                /*
-                if (App.thisApp._settings.VoterCount > 500)
-                {
-                    App.Log("  Loading pushpins and calculating distance...");
-                    // TODO: Choose between distance filter and within viewport filter. We shouldn't need both.
+                    // Now filter on precinct if set
+                    if (_PrecinctFilter != "")
+                    {
+                        // _dataViewPins = from <PushpinModel> voter in _dataViewPins where voter.
+                        selectedVoters = from PushpinModel aVoter in selectedVoters where aVoter.precinct == _PrecinctFilter select aVoter;
+                        App.Log(String.Format(" {0} voters are in {1} precinct.", selectedVoters.Count(), _PrecinctFilter));
+                    }
+                    // Now filter on street if selected
+                    if (_StreetFilter != "")
+                    {
+                        selectedVoters = from PushpinModel aVoter in selectedVoters where aVoter.Street == _StreetFilter select aVoter;
+                        App.Log(String.Format(" {0} voters are in {1} precinct and live on {2}.", selectedVoters.Count(), _PrecinctFilter, _StreetFilter));
+                    }
+                    // If resulting list is still more than preset limit (do 300 for now) then filter to nearest 300
+                    if (selectedVoters.Count() > _MaxVotersInView)
+                    {
+                        _dataViewPins = GetViewVoterList(lr.Center, selectedVoters);
+                    }
+                    else
+                        _dataViewPins = selectedVoters.ToList();
+
+                    List<PushpinModel> l = new List<PushpinModel>(_dataViewPins.AsEnumerable());
+
+                    int total = 0;
+
+                    if (wait.WaitOne(0))
+                    {
+                        App.Log("  Wait was not signaled, continuing.");
+                        continue;
+                    }
+
+                    App.Log("  Adding filtered pushpins to listModel.");
+                    listModels.Clear();
                     foreach (PushpinModel p in l)
                     {
-                        //calculate distance from center of current viewport of map
-                        double lat = lr.Center.Latitude - p.Location.Latitude;
-                        double lon = lr.Center.Longitude - p.Location.Longitude;
-                        double dist = Math.Sqrt((lat * lat) + (lon * lon));
-                        p.dist = dist;
+                        total++;
+
+                        if (bfullcontent)
+                        {
+                            p.Content = p.FullName + "\r" + p.VoterFile.Address + " " + p.VoterFile.Address2;
+                        }
+                        else
+                        {
+                            p.Content = p.VoterFile.LastName;
+                        }
+                        if (p.Location.IsUnknown || p.Location.Latitude < 25.3 || p.Location.Longitude > -67.0)
+                        {
+                            // This pin doesn't have valid location info - Set the location for the pushpin to the center of the street or precinct
+                            StreetPinModel _street = (from StreetPinModel _st in Streets where _st.Content == p.Street select _st).FirstOrDefault();
+                            if (_street != null)
+                            {
+                                p.Location = _street.Center;
+                                App.Log(string.Format("Voter at {0} lacks location, setting to center of {1} street.", p.Address, _street.Content));
+                            }
+                        }
+
+                        listModels.Add(p);
 
                         if (wait.WaitOne(0))
                         {
                             break;
                         }
                     }
-                    App.Log("  Finished loading Pushpins.");
 
-                    if (wait.WaitOne(0))
-                    {
-                        App.Log("  Wait was not signaled, continuing (2).");
-                        continue;
-                    }
-
-                    App.Log("  Sorting pushpins...");
-                    // Sort list of pushpins based on distance from center
-                    Comparison<PushpinModel> c = new Comparison<PushpinModel>(SortDistance);
-                    l.Sort(c);
-                    App.Log("  Done sorting pushpins.");
                 }
-                if (wait.WaitOne(0))
+                catch (Exception ex)
                 {
-                    App.Log("  Wait was not signaled, continuing (3).");
-                    continue;
+                    App.Log("Something went wrong in the background thread. " + ex.ToString());
                 }
-                App.Log("  Done loading closest pushpins.");
-                */
-
-                App.Log("  Adding filtered pushpins to listModel.");
-                listModels.Clear();
-                foreach (PushpinModel p in l)
-                {
-                    total++;
-
-                    if (bfullcontent)
-                    {
-                        p.Content = p.FullName + "\r" + p.VoterFile.Address + " " + p.VoterFile.Address2;
-                    }
-                    else
-                    {
-                        p.Content = p.VoterFile.LastName;
-                    }
-
-                    listModels.Add(p);
-
-                    // If the voter list in DB contains more than 500 (large precinct voter count) we need to reduce the number of those in the current view
-                    // TODO: This is the third distance/within view filter , let's just use a filter against lat/long in query
-                    /*
-                    if (App.thisApp._settings.VoterCount > 500)
-                    {
-                        double west = lr.West - (lr.East - lr.West) / 3.0;
-                        double east = lr.East + (lr.East - lr.West) / 3.0;
-                        double north = lr.North + (lr.North - lr.South) / 3.0;
-                        double south = lr.South - (lr.North - lr.South) / 3.0;
-
-                        // Check to see if this PushPin in list is more than preset distance from center, break if so
-                        if (false == (west <= p.Location.Longitude && east >= p.Location.Longitude &&
-                           north >= p.Location.Latitude && south <= p.Location.Latitude))
-                        {
-                            break;
-                        }
-                        // If we have already added 200 pushpins to the map, stop adding them
-                        if (total >= 200)
-                        {
-                            break;
-                        }
-                    }
-                    */
-
-                    if (wait.WaitOne(0))
-                    {
-                        break;
-                    }
-                }
-
                 if (App.thisApp._settings.DbStatus == DbState.Loaded)
                 {
-                    // listModels.Add(me);
-                    // ShowMe = true;
-                    // ShowPushpins = true;
                 }
 
                 if (wait.WaitOne(0))
@@ -510,25 +457,81 @@ namespace mapapp
             // TODO: We need to reload the listModels again
             zoomlevel = Map.ZoomLevel;
             follow = false;
-            wait.Set();
+            if (App.thisApp._settings.VoterCount > 200) // This supports location-based filtering on large voter sets
+            {
+                wait.Set();
+            }
         }
 
         public void MapZoomed(object o, MapZoomEventArgs e)
         {
             // we need to reload the listModels again
             zoomlevel = Map.ZoomLevel;
+            App.Log("Map zoomed to level " + zoomlevel.ToString());
+            bool _visiblePinsChanged = false;
+            // When zoomed out to zoomlevel 15 and smaller show only the precinct pins
             if (zoomlevel < 15)
             {
-                _PrecinctFilter = "";
-                ShowPrecincts = true;
-                ShowPushpins = false;
+                if (!ShowPrecincts || ShowStreets || ShowPushpins || _PrecinctFilter != "")
+                {
+                    _PrecinctFilter = "";
+                    _StreetFilter = "";
+                    ShowPrecincts = true;
+                    ShowStreets = false;
+                    ShowPushpins = false;
+                    _visiblePinsChanged = true;
+                    _showDetails = false;
+                }
             }
+            // When zoomed between 15 and 16 show streets and precincts (TODO: Verify we want precincts to still be shown)
+            else if (zoomlevel >= 15 && zoomlevel <= 16.2)
+            {
+                if (ShowPushpins) // We are zooming out - just show the streets
+                {
+
+                }
+                if (!ShowStreets || ShowPrecincts || ShowPushpins || _StreetFilter != "")
+                {
+                    _StreetFilter = "";
+                    ShowPrecincts = false;  // NOTE: Set this to false if precincts are in the way in street view
+                    ShowStreets = true;
+                    ShowPushpins = false;
+                    _visiblePinsChanged = true;
+                    _showDetails = false;
+                }
+            }
+            // When zoomed in to 16 or closer just show the individual voter pins, hide street and precinct pins
+            // TODO: We need a new pin type to represent an aggregate view of multi-family locations where
+            // multiple voters map to the same geographic location.
             else
             {
-                ShowPushpins = true;
-                ShowPrecincts = false;
+                if (!ShowPushpins || ShowStreets || ShowPrecincts)
+                {
+                    // NOTE: We are purposely not clearing the street or precinct filters when zooming in
+                    ShowPushpins = true;
+                    ShowStreets = false;
+                    ShowPrecincts = false;
+                    _visiblePinsChanged = true;
+                }
+                if (zoomlevel >= 18.0) // Needed to support changing pushpin content to expanded view
+                {
+                    if (!_showDetails)
+                    {
+                        _showDetails = true;
+                        _visiblePinsChanged = true;
+                    }
+                }
+                else
+                {
+                    if (_showDetails)
+                    {
+                        _showDetails = false;
+                        _visiblePinsChanged = true;
+                    }
+                }
             }
-            wait.Set();
+            if (_visiblePinsChanged)
+                wait.Set();
         }
 
         int SortDistance(PushpinModel p1, PushpinModel p2)
@@ -571,6 +574,7 @@ namespace mapapp
                 _pin = new PushpinModel(_v);
                 if (0.0 == _pin.Location.Latitude || 0.0 == _pin.Location.Longitude)
                 {
+                    App.Log("Skipping voter with no location:" + _pin.Address);
                     continue;
                 }
                 _counter++;
@@ -583,6 +587,14 @@ namespace mapapp
                 else
                 {
                     System.Diagnostics.Debug.WriteLine("Error: A pin doesn't have a location: " + _pin.Content);
+                    // This pin doesn't have valid location info - Set the location for the pushpin to the center of the street or precinct
+                    StreetPinModel _street = (from StreetPinModel _st in Streets where _st.Content == _pin.Street select _st).FirstOrDefault();
+                    if (_street != null)
+                    {
+                        _pin.Location = _street.Center;
+                        App.Log(string.Format("Voter at {0} lacks location, setting to center of {1} street.", _pin.Address, _street.Content));
+                        _list.Add(_pin);
+                    }
                 }
             }
 
@@ -600,13 +612,25 @@ namespace mapapp
         private List<PushpinModel> GetViewVoterList(GeoCoordinate center, IEnumerable<PushpinModel> voterList)
         {
             List<PushpinModel> _list = new List<PushpinModel>();
-
-            _dataView.SetSize(2.0);
             _dataView.SetCenterLocation(center);
+            if (voterList.Count() > _MaxVotersInView)
+            {
+                _dataView.SetSize(2.0);
 
-            _list = (from PushpinModel pin in voterList 
-                     where pin.Location.Latitude <= _dataView.North && pin.Location.Latitude >= _dataView.South && 
-                           pin.Location.Longitude >= _dataView.West && pin.Location.Longitude <= _dataView.East select pin).ToList();
+                _list = (from PushpinModel pin in voterList
+                         where pin.Location.Latitude <= _dataView.North && pin.Location.Latitude >= _dataView.South &&
+                               pin.Location.Longitude >= _dataView.West && pin.Location.Longitude <= _dataView.East
+                         select pin).ToList();
+            }
+            else
+            {
+                _dataView.West = voterList.Min<PushpinModel, double>(vMin => vMin.Location.Longitude); // smallest longitude found in list (or largest absolute value)
+                _dataView.East = voterList.Max<PushpinModel, double>(vMax => vMax.Location.Longitude); // largest longitude found in list (or smallest absolute value)
+                _dataView.North = voterList.Max<PushpinModel, double>(vMax => vMax.Location.Latitude); // largest latitude found in list
+                _dataView.South = voterList.Min<PushpinModel, double>(vMin => vMin.Location.Latitude); // smallest latitude found in list
+
+                _list = voterList.ToList();
+            }
             return _list;
         }
 
@@ -701,10 +725,47 @@ namespace mapapp
             }
         }
 
-        private readonly ObservableCollection<PrecinctPinModel> _precinctPins = new ObservableCollection<PrecinctPinModel>
-        {
+        private readonly ObservableCollection<StreetPinModel> _streetPins = new ObservableCollection<StreetPinModel> {};
 
-        };
+        public ObservableCollection<StreetPinModel> Streets
+        {
+            get { return _streetPins; }
+        }
+
+        public bool ShowStreets
+        {
+            get { return _showStreets; }
+            set
+            {
+                if (_showStreets != value)
+                {
+                    _showStreets = value;
+                    NotifyPropertyChanged("ShowStreets");
+                }
+            }
+        }
+
+        private void LoadStreets()
+        {
+            VoterFileDataContext _voterDB = new mapapp.data.VoterFileDataContext(string.Format(mapapp.data.VoterFileDataContext.DBConnectionString, App.thisApp._settings.DbFileName));
+            System.Diagnostics.Debug.Assert(_voterDB.DatabaseExists());
+
+            if (!(App.thisApp._settings.DbStatus == DbState.Loaded))
+            {
+                App.Log("Database not ready to load streets yet.");
+                return;
+            }
+            IEnumerable<StreetTableEntry> streets = (from street in _voterDB.Streets select street);
+            foreach (StreetTableEntry street in streets)
+            {
+                App.Log(" Adding street: " + street.Name);
+                StreetPinModel pPin = new StreetPinModel(street);
+                Streets.Add(pPin);
+            }
+            _voterDB.Dispose();
+        }
+
+        private readonly ObservableCollection<PrecinctPinModel> _precinctPins = new ObservableCollection<PrecinctPinModel> {};
 
         public ObservableCollection<PrecinctPinModel> Precincts
         {
@@ -737,10 +798,22 @@ namespace mapapp
             IEnumerable<PrecinctTableEntry> precincts = (from precinct in _voterDB.Precincts select precinct);
             foreach (PrecinctTableEntry precinct in precincts)
             {
-                App.Log(" Adding precinct: " + precinct);
+                App.Log(" Adding precinct: " + precinct.Name);
                 PrecinctPinModel pPin = new PrecinctPinModel(precinct);
                 Precincts.Add(pPin);
             }
+            /*
+            if (Precincts.Count() > 1)
+            {
+                ShowPushpins = false;
+                ShowPrecincts = true;
+            }
+            else
+            {
+                ShowPushpins = true;
+                ShowPrecincts = false;
+            }
+            */
             _voterDB.Dispose();
         }
 
@@ -937,6 +1010,27 @@ namespace mapapp
                 ApplicationBar = _mainAppBar;
         }
 
+        private void Street_Hold(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            if (sender is Pushpin)
+            {
+                Pushpin pinHeld = sender as Pushpin;
+                if (pinHeld.DataContext is StreetPinModel)
+                {
+                    StreetPinModel pinModel = pinHeld.DataContext as StreetPinModel;
+                    _StreetFilter = pinModel.StreetEntry.Name;
+                    Zoom = 15.0; // Force zoom to be just outside of the "showStreets" range
+                    Map.ZoomLevel = Zoom;
+                    Center = pinModel.Center;
+                    ShowPushpins = true;
+                    ShowPrecincts = false;
+                    ShowStreets = false;
+                    App.Log(string.Format("{0} street selected", _StreetFilter));
+                    wait.Set();
+                }
+            }
+        }
+
         private void Precinct_Hold(object sender, System.Windows.Input.GestureEventArgs e)
         {
             if (sender is Pushpin)
@@ -946,11 +1040,14 @@ namespace mapapp
                 {
                     PrecinctPinModel pinModel = pinHeld.DataContext as PrecinctPinModel;
                     _PrecinctFilter = pinModel.PrecinctEntry.Name;
-                    Zoom = 15.0; // Force zoom to be just outside of the "showPrecincts" range
+                    Zoom = 16.0; // Force zoom to be just outside of the "showPrecincts" range
+                    Map.ZoomLevel = Zoom;
                     Center = pinModel.Center;
-                    ShowPushpins = true;
+                    ShowPushpins = false;
+                    ShowStreets = true;
                     ShowPrecincts = false;
-                    // MapZoomed(sender, );
+                    App.Log(string.Format("{0} precinct selected", _PrecinctFilter));
+                    wait.Set();
                 }
             }
         }
@@ -965,10 +1062,10 @@ namespace mapapp
         private double _size = 2.0;
         // private GeoCoordinate _center = new GeoCoordinate();
 
-        public double North { get { return dataView.North; } }
-        public double South { get { return dataView.South; } }
-        public double East { get { return dataView.East; } }
-        public double West { get { return dataView.West; } }
+        public double North { get { return dataView.North; } set { dataView.North = value; } }
+        public double South { get { return dataView.South; } set { dataView.South = value; } }
+        public double East { get { return dataView.East; } set { dataView.East = value; } }
+        public double West { get { return dataView.West; } set { dataView.West = value; } }
 
         public DataViewport(GeoCoordinate center)
         {

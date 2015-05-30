@@ -23,6 +23,9 @@ using System.ComponentModel;
 using System.Text;
 using System.IO.IsolatedStorage;
 using System.Windows.Resources;
+// using BingMapsRESTService.Common.JSON;
+// using System.Runtime.Serialization;
+// using System.Runtime.Serialization.Json;
 
 namespace mapapp
 {
@@ -127,7 +130,7 @@ namespace mapapp
             return _bReturn;
         }
 
-        public string ReportUpdates()
+        public string CreateUpdateFile()
         {
             string _updatesFileName = "";
             VoterFileDataContext _voterDB = new VoterFileDataContext(string.Format(VoterFileDataContext.DBConnectionString, _settings.DbFileName));
@@ -139,7 +142,7 @@ namespace mapapp
                                                          // where voter.IsUpdated == true
                                                          where voter.ModifiedTime > _settings.GetSetting<DateTime>("lastsync")
                                                          select voter;
-                    App.Log("  ReportUpdates Query completed. Starting write to file");
+                    App.Log("  CreateUpdateFile Query completed. Starting write to file");
 
                     String stDataFormat = App.thisApp._settings.GetSetting<string>("dataformat");
                     IsolatedStorageFile _iso = IsolatedStorageFile.GetUserStoreForApplication();
@@ -188,7 +191,10 @@ namespace mapapp
                     {
                         StringBuilder csv = new StringBuilder();
                         csv.Clear();
-                        csv.AppendLine("recid,party,resultofcontact,email,cellphone,issupporter,comments,modifiedtime");
+                        if (App.thisApp._settings.GetSetting<bool>("_trhack"))
+                            csv.AppendLine("redid,party,resultofcontact,email,cellphone,issupporter,comments,modifiedtime");
+                        else
+                            csv.AppendLine("recid,party,resultofcontact,email,cellphone,issupporter,comments,modifiedtime");
                         _updateFileStream.Write(csv.ToString());
                         csv.Clear();
 
@@ -213,6 +219,98 @@ namespace mapapp
             }
             _voterDB.Dispose();
             return _updatesFileName;
+        }
+
+        public string GetUpdateString()
+        {
+            string stUpdates = "";
+            VoterFileDataContext _voterDB = new VoterFileDataContext(string.Format(VoterFileDataContext.DBConnectionString, _settings.DbFileName));
+            if (_voterDB.DatabaseExists())
+            {
+                try
+                {
+                    IEnumerable<VoterFileEntry> voters = from voter in _voterDB.AllVoters
+                                                         // where voter.IsUpdated == true
+                                                         where voter.ModifiedTime > _settings.GetSetting<DateTime>("lastsync")
+                                                         select voter;
+                    App.Log("  GetUpdateString Query completed.");
+
+                    String stDataFormat = App.thisApp._settings.GetSetting<string>("dataformat");
+                    DateTime _now = DateTime.Now;
+                    string _dateString = string.Format("{0:0000}{1:00}{2:00}{3:00}{4:00}{5:00}", _now.Year, _now.Month, _now.Day, _now.Hour, _now.Minute, _now.Second);
+                    // StreamWriter _updateFileStream = new StreamWriter(_outputStream);
+
+                    StringWriter _updateFileString = new StringWriter();
+
+                    if (stDataFormat == "xml")
+                    {
+                        StringBuilder xml = new StringBuilder();
+                        xml.Clear();
+                        xml.AppendLine("<VoterUpdates>");
+                        xml.AppendFormat("\t<ReportDate>{0}</ReportDate>{1}", DateTime.Now, System.Environment.NewLine);
+                        xml.AppendLine("\t<VoterList>");
+                        _updateFileString.Write(xml.ToString());
+                        xml.Clear();
+
+                        foreach (VoterFileEntry voter in voters)
+                        {
+                            // TODO: Add WriteUpdateToXml() method to VoterFileEntry object
+                            xml.AppendLine("\t\t<VoterUpdate>");
+                            xml.AppendFormat("\t\t\t<ID>{0}</ID>{1}", voter.VoterID, System.Environment.NewLine);
+                            xml.AppendFormat("\t\t\t<Party>{0}</Party>{1}", voter.Party, System.Environment.NewLine);
+                            xml.AppendFormat("\t\t\t<ResultOfContact>{0}</ResultOfContact>{1}", voter.ResultOfContact, System.Environment.NewLine);
+                            xml.AppendFormat("\t\t\t<Email>{0}</Email>{1}", voter.Email, System.Environment.NewLine);
+                            xml.AppendFormat("\t\t\t<CellPhone>{0}</CellPhone>{1}", voter.CellPhone, System.Environment.NewLine);
+                            xml.AppendFormat("\t\t\t<IsSupporter>{0}</IsSupporter>{1}", voter.IsSupporter, System.Environment.NewLine);
+                            xml.AppendFormat("\t\t\t<IsVolunteer>{0}</IsVolunteer>{1}", voter.IsVolunteer, System.Environment.NewLine);
+                            xml.AppendFormat("\t\t\t<IsModified>{0}</IsModified>{1}", voter.IsUpdated, System.Environment.NewLine);
+                            xml.AppendFormat("\t\t\t<Comments>{0}</Comments>{1}", voter.Comments, System.Environment.NewLine);
+                            xml.AppendFormat("\t\t\t<ModifiedTime>{0}</ModifiedTime>{1}", voter.ModifiedTime, System.Environment.NewLine);
+                            xml.AppendLine("\t\t</VoterUpdate>");
+                            _updateFileString.Write(xml.ToString());
+                            xml.Clear();
+                        }
+                        xml.AppendLine("\t</VoterList>");
+                        xml.AppendLine("</VoterUpdates>");
+                        _updateFileString.Write(xml.ToString());
+                        _updateFileString.Flush();
+                        stUpdates = _updateFileString.ToString();
+                        _updateFileString.Close();
+                        xml.Clear();
+                    }
+                    else if (stDataFormat == "csv")
+                    {
+                        StringBuilder csv = new StringBuilder();
+                        csv.Clear();
+                        if (App.thisApp._settings.GetSetting<bool>("_trhack"))
+                            csv.AppendLine("redid,party,resultofcontact,email,cellphone,issupporter,comments,modifiedtime");
+                        else
+                            csv.AppendLine("recid,party,resultofcontact,email,cellphone,issupporter,comments,modifiedtime");
+                        _updateFileString.Write(csv.ToString());
+                        csv.Clear();
+
+                        foreach (VoterFileEntry voter in voters)
+                        {
+                            // TODO: Add WriteUpdateToCsv() method to VoterFileEntry object
+                            csv.AppendFormat("{0},{1},{2},{3},{4},{5},{6},{7}{8}", voter.VoterID, voter.Party, voter.ResultOfContact, voter.Email, voter.CellPhone, voter.IsSupporter, voter.Comments, voter.ModifiedTime, System.Environment.NewLine);
+                            _updateFileString.Write(csv.ToString());
+                            csv.Clear();
+                        }
+                        _updateFileString.Flush();
+                        stUpdates = _updateFileString.ToString();
+                        _updateFileString.Close();
+                        csv.Clear();
+                    }
+                    Log("  Completed: Updates = " + stUpdates);
+                }
+                catch (Exception ex)
+                {
+                    Log(" Error reporting changes: " + ex.ToString());
+                    stUpdates = "";
+                }
+            }
+            _voterDB.Dispose();
+            return stUpdates;
         }
 
         // private static VoterFileDataContext _voterDB;
@@ -321,53 +419,7 @@ namespace mapapp
                 if (_dbLoadThread == null)
                     _dbLoadThread = new Thread(LoadDatabase);
 
-                IsolatedStorageFile isf = IsolatedStorageFile.GetUserStoreForApplication();
-                IsolatedStorageFileStream voterFile = isf.OpenFile(fileName, FileMode.Open);
-                // Stream voterDataStream = null;
-                Dictionary<String, Stream> voterData = new Dictionary<string, Stream>();
-
-                if (fileName.EndsWith(".xml"))
-                {
-                    App.thisApp._settings.UpdateSetting("dataformat", "xml");
-                    voterData.Add("xml", voterFile);
-                    // voterDataStream = voterFile;
-                }
-                else if (fileName.EndsWith(".csv"))
-                {
-                    App.thisApp._settings.UpdateSetting("dataformat", "csv");
-                    voterData.Add("csv", voterFile);
-                    // voterDataStream = voterFile;
-                }
-                /*
-                else if (fileName.EndsWith(".zip"))
-                {
-                    string voterFileName = "voters.xml";
-                    if (voterFile.CanSeek)
-                    {
-                        byte[] fileFront = new byte[64];
-                        int bytesRead = voterFile.Read(fileFront, 0, 64);
-                        voterFile.Seek(0, SeekOrigin.Begin);
-                        byte[] fileNameBytes = new byte[20];
-                        int i = 0;
-                        for (i = 0; i < 16; i++)
-                        {
-                            fileNameBytes[i] = fileFront[30 + i];
-                            if (fileNameBytes[i] > 128)
-                            {
-                                fileNameBytes[i] = 0;
-                                break;
-                            }
-                        }
-                        voterFileName = Encoding.UTF8.GetString(fileNameBytes, 0, i);
-                    }
-                    StreamResourceInfo zipInfo = new StreamResourceInfo(voterFile, "application/zip");
-                    StreamResourceInfo streamInfo = Application.GetResourceStream(zipInfo, new Uri(voterFileName, UriKind.Relative));
-                    if (streamInfo != null)
-                        voterDataStream = streamInfo.Stream;
-                }
-                */
-                if (voterData.Count > 0)
-                    _dbLoadThread.Start(voterData);
+                _dbLoadThread.Start(fileName);
             }
         }
 
@@ -399,7 +451,7 @@ namespace mapapp
             return voterXml;
         }
 
-        public void LoadDatabase(Object voterDataDict)
+        public void LoadDatabase(Object voterFileName)
         {
             // TODO: Update passed object to stream, rely on dataformat setting to get type of data in voter list
             /*
@@ -427,15 +479,63 @@ namespace mapapp
             recid,address,address2,city,state,zip,phone,lastname,firstname,HouseholdVoters,email,precinct,party,pri,gen,location,resultofcontact,cellphone,issupporter,comments,modifiedtime
                     1234 Anystreet,,Sammamish,WA,98074,,BOND,"JAMES, GALORE",JAMES and GALORE BOND,,SAM 45-1234,1,2,4,WA00092212345,"47.6161616,-122.0551111",,,,,
             */
-            Stream dataStream = null;
-            String dataType = "unknown";
-            if (voterDataDict is Dictionary<String, Stream>)
+            string fileName = "";
+            // Stream dataStream = null;
+            // String dataType = "csv";
+
+            if (voterFileName is string)
             {
-                Dictionary<String, Stream> voterData = voterDataDict as Dictionary<String, Stream>;
-                dataType = voterData.First().Key;
-                dataStream = voterData.First().Value;
+                fileName = voterFileName as string;
+            }
+            else
+            {
+                // MessageBox("Unable to load voter data file.", "Oops!", MessageBoxButton.OK);
+                return;
             }
 
+            IsolatedStorageFile isf = IsolatedStorageFile.GetUserStoreForApplication();
+            IsolatedStorageFileStream voterFile = isf.OpenFile(fileName, FileMode.Open);
+            Stream voterDataStream = voterFile;
+
+            if (fileName.EndsWith(".xml"))
+            {
+                App.thisApp._settings.UpdateSetting("dataformat", "xml");
+            }
+            else if (fileName.EndsWith(".csv"))
+            {
+                App.thisApp._settings.UpdateSetting("dataformat", "csv");
+            }
+            else if (fileName.EndsWith(".zip"))
+            {
+                string _voterFileName = "voters.csv";
+                if (voterFile.CanSeek)
+                {
+                    byte[] fileFront = new byte[64];
+                    int bytesRead = voterFile.Read(fileFront, 0, 64);
+                    voterFile.Seek(0, SeekOrigin.Begin);
+                    byte[] fileNameBytes = new byte[20];
+                    int i = 0;
+                    for (i = 0; i < 16; i++)
+                    {
+                        fileNameBytes[i] = fileFront[30 + i];
+                        if (fileNameBytes[i] > 128)
+                        {
+                            fileNameBytes[i] = 0;
+                            break;
+                        }
+                    }
+                    _voterFileName = Encoding.UTF8.GetString(fileNameBytes, 0, i);
+                }
+                if (_voterFileName.EndsWith(".xml"))
+                {
+                    App.thisApp._settings.UpdateSetting("dataformat", "xml");
+                }
+                StreamResourceInfo zipInfo = new StreamResourceInfo(voterFile, "application/zip");
+                StreamResourceInfo streamInfo = Application.GetResourceStream(zipInfo, new Uri(_voterFileName, UriKind.Relative));
+                if (streamInfo != null)
+                    voterDataStream = streamInfo.Stream;
+            }
+            
             int nVoters = 0;
             // TODO: If we have an existing database, update voter records for existing voters and add new voter records 
 
@@ -470,12 +570,12 @@ namespace mapapp
                         App.Log("  Database created");
                     }
 
-                    if (dataType == "xml")
+                    if (App.thisApp._settings.GetSetting<string>("dataformat") == "xml")
                     {
 
                         XDocument loadedData = null;
 
-                        loadedData = XDocument.Load(dataStream);
+                        loadedData = XDocument.Load(voterDataStream);
 
                         IEnumerable<XElement> dbDate = loadedData.Descendants("timestamp");
                         if (dbDate != null)
@@ -528,56 +628,125 @@ namespace mapapp
                             }
                         }
                     }
-                    else if (dataType == "csv")
+                    else if (App.thisApp._settings.GetSetting<string>("dataformat") == "csv")
                     {
                         // Load voters from rows in csv text
-                        StreamReader csvReader = new StreamReader(dataStream);
+                        StreamReader csvReader = new StreamReader(voterDataStream);
 
+                        String headerLine = csvReader.ReadLine().ToLower();
                         String voterLine = csvReader.ReadLine();
                         _settings.DbStatus = DbState.Loading;
                         App.Log("  Parsing voters from CSV");
 
-                        String headerLine = voterLine;
-                        voterLine = csvReader.ReadLine();
                         while (voterLine != null)
                         {
                             // recid,address,address2,city,state,zip,phone,lastname,firstname,HouseholdVoters,email,precinct,party,pri,gen,location
                             XElement voterElement = GetVoterXmlFromCsv(headerLine, voterLine);
-                            VoterFileEntry voter = new VoterFileEntry
-                                                    {
-                                                        FirstName = (string)voterElement.Element("firstname"),
-                                                        LastName = (string)voterElement.Element("lastname"),
-                                                        Address = (string)voterElement.Element("address"),
-                                                        Address2 = (string)voterElement.Element("address2"),
-                                                        City = (string)voterElement.Element("city"),
-                                                        State = (string)voterElement.Element("state"),
-                                                        Zip = (string)voterElement.Element("zip"),
-                                                        VoterID = (string)voterElement.Element("recid"),
-                                                        PartyString = (string)voterElement.Element("party"),
-                                                        Precinct = (string)voterElement.Element("precinct"),
-                                                        PrimaryVoteHistoryString = (string)voterElement.Element("pri"),
-                                                        GeneralVoteHistoryString = (string)voterElement.Element("gen"),
-                                                        Email = (string)voterElement.Element("email"),
-                                                        Phone = (string)voterElement.Element("phone"),
-                                                        Coordinates = (string)voterElement.Element("location"),
-                                                        ResultOfContactString = (string)voterElement.Element("resultofcontact"),
-                                                        CellPhone = (string)voterElement.Element("cellphone"),
-                                                        IsSupporterString = (string)voterElement.Element("issupporter"),
-                                                        IsVolunteerString = (string)voterElement.Element("isvolunteer"),
-                                                        Comments = (string)voterElement.Element("comments"),
-                                                        ModifiedTime = DateTime.Now
-                                                    };
+                            // We need at least the basics of address, city, and voterid to do anything useful with this record
+                            try
+                            {
+                                VoterFileEntry voter = new VoterFileEntry
+                                                        {
+                                                            Address = (string)voterElement.Element("address"),
+                                                            City = (string)voterElement.Element("city"),
+                                                            // VoterID = (string)voterElement.Element("recid"),
+                                                            ModifiedTime = DateTime.Now
+                                                        };
+                                if (voterElement.Elements("recid").Count() > 0)
+                                {
+                                    voter.VoterID = (string)voterElement.Element("recid");
+                                    App.thisApp._settings.UpdateSetting("_trhack", false);
+                                }
+                                // NOTE: This is a hack to fix my data error just before TechRoanoke conference
+                                else if (voterElement.Elements("redid").Count() > 0)
+                                {
+                                    voter.VoterID = (string)voterElement.Element("redid");
+                                    App.thisApp._settings.UpdateSetting("_trhack", true);
+                                }
+                                if (voterElement.Elements("firstname").Count() > 0)
+                                    voter.FirstName = (string)voterElement.Element("firstname");
+                                if (voterElement.Elements("lastname").Count() > 0)
+                                    voter.LastName = (string)voterElement.Element("lastname");
+                                if (voterElement.Elements("address2").Count() > 0)
+                                    voter.Address2 = (string)voterElement.Element("address2");
+                                if (voterElement.Elements("state").Count() > 0)
+                                    voter.State = (string)voterElement.Element("state");
+                                else
+                                    voter.State = "WA";
+                                if (voterElement.Elements("zip").Count() > 0)
+                                    voter.Zip = (string)voterElement.Element("zip");
+                                if (voterElement.Elements("party").Count() > 0)
+                                    voter.PartyString = (string)voterElement.Element("party");
+                                if (voterElement.Elements("precinctname").Count() > 0) // Prefer "precinctname" over "precinct"
+                                    voter.Precinct = (string)voterElement.Element("precinctname");
+                                else if (voterElement.Elements("precinct").Count() > 0)
+                                    voter.Precinct = (string)voterElement.Element("precinct");
+                                if (voterElement.Elements("pri").Count() > 0)
+                                    voter.PrimaryVoteHistoryString = (string)voterElement.Element("pri");
+                                if (voterElement.Elements("gen").Count() > 0)
+                                    voter.GeneralVoteHistoryString = (string)voterElement.Element("gen");
+                                if (voterElement.Elements("email").Count() > 0)
+                                    voter.Email = (string)voterElement.Element("email");
+                                if (voterElement.Elements("phone").Count() > 0)
+                                    voter.Phone = (string)voterElement.Element("phone");
+                                if (voterElement.Elements("location").Count() > 0)
+                                    voter.Coordinates = (string)voterElement.Element("location");
+                                else
+                                {
+                                    if (voterElement.Elements("lat").Count() > 0)
+                                        voter.LatitudeString = (string)voterElement.Element("lat");
+                                    if (voterElement.Elements("long").Count() > 0)
+                                        voter.LongitudeString = (string)voterElement.Element("long");
+                                }
+                                if (voterElement.Elements("resultofcontact").Count() > 0)
+                                    voter.ResultOfContactString = (string)voterElement.Element("resultofcontact");
+                                if (voterElement.Elements("cellphone").Count() > 0)
+                                    voter.CellPhone = (string)voterElement.Element("cellphone");
+                                if (voterElement.Elements("issupporter").Count() > 0)
+                                    voter.IsSupporterString = (string)voterElement.Element("issupporter");
+                                if (voterElement.Elements("isvolunteer").Count() > 0)
+                                    voter.IsVolunteerString = (string)voterElement.Element("isvolunteer");
+                                if (voterElement.Elements("comments").Count() > 0)
+                                    voter.Comments = (string)voterElement.Element("comments");
+                                if (voterElement.Elements("address2").Count() > 0)
+                                    voter.Address2 = (string)voterElement.Element("address2");
+
+                                if (voterElement.Elements("gender").Count() > 0)
+                                {
+                                    voter.Gender = (string)voterElement.Element("gender");
+                                    voter.FirstName = voter.FirstName + " " + voter.Gender;
+                                }
+                                if (voterElement.Elements("birthdate").Count() > 0)
+                                {
+                                    voter.Birthdate = (string)voterElement.Element("birthdate");
+                                    if (voter.Age > 0)
+                                        voter.FirstName = voter.FirstName + " " + voter.Age.ToString();
+                                }
+                                // We don't have lat/long for this voter, but we can still show them in precinct and street lists
+                                if (0.0 == voter.Latitude || 0.0 == voter.Longitude)
+                                {
+                                    // continue; 
+                                }
+                                nVoters++;
+                                _voterDB.AllVoters.InsertOnSubmit(voter);
+                            }
+                            catch (Exception ex)
+                            {
+                                App.Log("There was a problem parsing voter record - " + voterLine + " : " + ex.ToString());
+                            }
 
                             voterLine = csvReader.ReadLine();
-                            if (0.0 == voter.Latitude || 0.0 == voter.Longitude)
-                            {
-                                continue;
-                            }
-                            nVoters++;
-                            _voterDB.AllVoters.InsertOnSubmit(voter);
                         }
                         App.Log("  Parsing voters completed");
                     }
+                    else
+                    {
+                        App.Log("Unrecognized file type - " + fileName);
+                    }
+                    voterDataStream.Close();
+                    voterDataStream.Dispose();
+                    voterFile.Close();
+                    voterFile.Dispose();
                     App.Log("  Voters submitted to database: " + nVoters.ToString());
                     _voterDB.SubmitChanges(System.Data.Linq.ConflictMode.ContinueOnConflict);
                     App.Log(" Loading Precincts table");
@@ -586,20 +755,48 @@ namespace mapapp
                     {
                         PrecinctTableEntry thisPrecinct = new PrecinctTableEntry();
                         thisPrecinct.Name = precinct;
-                        List<VoterFileEntry> pList = (from VoterFileEntry vPrecinct in _voterDB.AllVoters where vPrecinct.Precinct == precinct select vPrecinct).ToList();
+                        List<VoterFileEntry> pList = (from VoterFileEntry vPrecinct in _voterDB.AllVoters where vPrecinct.Precinct == precinct && vPrecinct.Latitude > 47.0 && vPrecinct.Longitude < 122.0 select vPrecinct).ToList();
                         App.Log(String.Format("   There are {0} voters in {1} precinct.", pList.Count, precinct));
-                        thisPrecinct.West = pList.Min<VoterFileEntry, double>(vMin => vMin.Longitude); // smallest longitude found in list (or largest absolute value)
-                        thisPrecinct.East = pList.Max<VoterFileEntry, double>(vMax => vMax.Longitude); // largest longitude found in list (or smallest absolute value)
-                        thisPrecinct.North = pList.Max<VoterFileEntry, double>(vMax => vMax.Latitude); // largest latitude found in list
-                        thisPrecinct.South = pList.Min<VoterFileEntry, double>(vMin => vMin.Latitude); // smallest latitude found in list
-                        App.Log(String.Format("Precinct {4} - North={0}, South={1}, East={2}, West={3}.", thisPrecinct.North, thisPrecinct.South, thisPrecinct.East, thisPrecinct.West, thisPrecinct.Name));
-                        double diffLat = thisPrecinct.North - thisPrecinct.South;
-                        double diffLong = thisPrecinct.East - thisPrecinct.West;
-                        thisPrecinct.CenterLatitude = thisPrecinct.South + (diffLat / 2);
-                        thisPrecinct.CenterLongitude = thisPrecinct.West + (diffLong / 2);
-                        _voterDB.Precincts.InsertOnSubmit(thisPrecinct);
+                        if (pList.Count > 0)
+                        {
+                            thisPrecinct.West = pList.Min<VoterFileEntry, double>(vMin => vMin.Longitude); // smallest longitude found in list (or largest absolute value)
+                            thisPrecinct.East = pList.Max<VoterFileEntry, double>(vMax => vMax.Longitude); // largest longitude found in list (or smallest absolute value)
+                            thisPrecinct.North = pList.Max<VoterFileEntry, double>(vMax => vMax.Latitude); // largest latitude found in list
+                            thisPrecinct.South = pList.Min<VoterFileEntry, double>(vMin => vMin.Latitude); // smallest latitude found in list
+                            App.Log(String.Format("Precinct {4} - North={0}, South={1}, East={2}, West={3}.", thisPrecinct.North, thisPrecinct.South, thisPrecinct.East, thisPrecinct.West, thisPrecinct.Name));
+                            double diffLat = thisPrecinct.North - thisPrecinct.South;
+                            double diffLong = thisPrecinct.East - thisPrecinct.West;
+                            thisPrecinct.CenterLatitude = thisPrecinct.South + (diffLat / 2);
+                            thisPrecinct.CenterLongitude = thisPrecinct.West + (diffLong / 2);
+                            _voterDB.Precincts.InsertOnSubmit(thisPrecinct);
+                        }
                     }
                     App.Log("  Submitting precincts to database: ");
+                    _voterDB.SubmitChanges(System.Data.Linq.ConflictMode.ContinueOnConflict);
+
+                    App.Log(" Loading Streets table");
+                    IEnumerable<string> _streets = (from v in _voterDB.AllVoters select v.Street).Distinct();
+                    foreach (string street in _streets)
+                    {
+                        StreetTableEntry thisStreet = new StreetTableEntry();
+                        thisStreet.Name = street;
+                        List<VoterFileEntry> pList = (from VoterFileEntry vStreet in _voterDB.AllVoters where vStreet.Street == street && vStreet.Latitude > 47.0 && vStreet.Longitude < 122.0 select vStreet).ToList();
+                        App.Log(String.Format("   There are {0} voters on {1} street.", pList.Count, street));
+                        if (pList.Count > 0)
+                        {
+                            thisStreet.West = pList.Min<VoterFileEntry, double>(vMin => vMin.Longitude); // smallest longitude found in list (or largest absolute value)
+                            thisStreet.East = pList.Max<VoterFileEntry, double>(vMax => vMax.Longitude); // largest longitude found in list (or smallest absolute value)
+                            thisStreet.North = pList.Max<VoterFileEntry, double>(vMax => vMax.Latitude); // largest latitude found in list
+                            thisStreet.South = pList.Min<VoterFileEntry, double>(vMin => vMin.Latitude); // smallest latitude found in list
+                            App.Log(String.Format("Street {4} - North={0}, South={1}, East={2}, West={3}.", thisStreet.North, thisStreet.South, thisStreet.East, thisStreet.West, thisStreet.Name));
+                            double diffLat = thisStreet.North - thisStreet.South;
+                            double diffLong = thisStreet.East - thisStreet.West;
+                            thisStreet.CenterLatitude = thisStreet.South + (diffLat / 2);
+                            thisStreet.CenterLongitude = thisStreet.West + (diffLong / 2);
+                            _voterDB.Streets.InsertOnSubmit(thisStreet);
+                        }
+                    }
+                    App.Log("  Submitting streets to database: ");
                     _voterDB.SubmitChanges(System.Data.Linq.ConflictMode.ContinueOnConflict);
 
                     App.Log("  Changes committed to database");
@@ -612,6 +809,36 @@ namespace mapapp
                 }
             }
         }
+
+        /*
+        // TODO: Set up a queue for any voters submitted w/o location info. Queue request to Bing location REST API
+        // Execute each call with wc.OpenReadAsync(uri, voterObject) so that we can update the specific object with the location results
+        // In the callback we should POST an update for that voter back to the service so that future reads of that voter will include the location data.
+        private void GetVoterLocation(Uri uri, Action<Response> callback)
+        {
+            WebClient wc = new WebClient();
+            wc.OpenReadCompleted += (o, a) =>
+            {
+                if (callback != null)
+                {
+                    DataContractJsonSerializer ser = new DataContractJsonSerializer(typeof(Response));
+                    callback(ser.ReadObject(a.Result) as Response);
+                }
+            };
+            wc.OpenReadAsync(uri);
+        }
+
+
+        private string GeocodeAddress(string address)
+        {
+            string Results = "";
+            // Set a Bing Maps key before making a request
+            string key = "AgTD8VcX7TSsg5eldqc4Pmhs0ST2L2GGYt4P9vPJZM9ijZTYsmzCmet-6Va1oX8d";
+
+            return Results;
+
+        }
+        */
 
         // Code to execute when the application is launching (eg, from Start)
         // This code will not execute when the application is reactivated

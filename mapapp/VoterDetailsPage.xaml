@@ -38,7 +38,8 @@
 
         <!--ContentPanel - place additional content here-->
         <Grid x:Name="pnlVoterDetails" Grid.Row="1" Margin="6,0">
-            <StackPanel Height="658" VerticalAlignment="Top">
+            <ScrollViewer>
+            <StackPanel VerticalAlignment="Top">
                 <StackPanel x:Name="pnlVoterRecord" Height="Auto" HorizontalAlignment="Left" Margin="10,2" VerticalAlignment="Top" Width="Auto">
                     <StackPanel Height="Auto" Name="pnlNameParty" Width="440" Orientation="Horizontal" 
                                         Background="{Binding Party, Converter={StaticResource PartyBgBrushConverter}}">
@@ -94,15 +95,20 @@
                     </StackPanel>
                     <StackPanel>
                         <CheckBox Content="Will support candidate" IsChecked="{Binding IsSupporter, Mode=TwoWay}" />
-                        <CheckBox Content="Willing to help" IsChecked="{Binding IsVolunteer, Mode=TwoWay}" />
+                        <CheckBox Content="Willing to help" IsChecked="{Binding IsVolunteer, Mode=TwoWay}" Visibility="Collapsed" />
                         <StackPanel Height="86" Name="pnlCellPhone" Width="440" Orientation="Horizontal">
                             <TextBlock Height="40" Name="lblCell" Text="mobile" Width="81" Padding="10,2" />
                             <TextBox Height="70" InputScope="TelephoneNumber" Name="txtCell" Text="{Binding CellPhone, Mode=TwoWay}" Width="352" />
                             <!-- TextBox Height="70" Name="txtModified" Text="{Binding ModifiedTime, Mode=TwoWay}" Width="352" Visibility="Collapsed" /-->
                         </StackPanel>
+                        <StackPanel Height="210" Name="pnlNotes" Width="440" Orientation="Horizontal">
+                            <TextBlock Height="40" Name="lblNotes" Text="notes" Width="81" Padding="10,2" VerticalAlignment="Top" Margin="0,20,0,0" />
+                            <TextBox Height="210"  Name="txtComments" Text="{Binding Comment, Mode=TwoWay}" Width="352" InputScope="Text" TextWrapping="Wrap"/>
+                        </StackPanel>
                     </StackPanel>
                 </StackPanel>
             </StackPanel>
+            </ScrollViewer>
         </Grid>
     </Grid>
  

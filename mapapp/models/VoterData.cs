@@ -148,6 +148,24 @@ namespace mapapp.data
             }
         }
 
+        private string _street = null;
+        [Column]
+        public string Street
+        {
+            get
+            {
+                if ((this._address != null) && (_street == null || _street.Length <= 0))
+                {
+                    _street = this._address.Substring(this._address.IndexOf(' ') + 1);
+                }
+                return _street;
+            }
+            set
+            {
+                _street = value;
+            }
+        }
+
         /// <summary>
         /// Line 2 of voter's registered address (Apartment, etc.)
         /// </summary>
@@ -224,6 +242,62 @@ namespace mapapp.data
             }
         }
 
+        /// <summary>
+        /// Voter's gender (M or F)
+        /// </summary>
+        private string _gender;
+        [Column]
+        public string Gender
+        {
+            get { return _gender; }
+            set
+            {
+                if (_gender != value)
+                {
+                    NotifyPropertyChanging("Gender");
+                    _gender = value;
+                    NotifyPropertyChanged("Gender");
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Voter's birthdate
+        /// </summary>
+        private string _birthdate;
+        [Column]
+        public string Birthdate
+        {
+            get { return _birthdate; }
+            set
+            {
+                if (_birthdate != value)
+                {
+                    NotifyPropertyChanging("Birthdate");
+                    _birthdate = value;
+                    NotifyPropertyChanged("Birthdate");
+                }
+            }
+        }
+
+        public int Age
+        {
+            get 
+            {
+                int nAge = 0;
+                DateTime _bd = new DateTime();
+                bool bParsed = DateTime.TryParse(_birthdate, out _bd);
+                if (bParsed)
+                {
+                    DateTime today = DateTime.Today;
+                    nAge = today.Year - _bd.Year;
+                    if (_bd > today.AddYears(-nAge)) nAge--;
+                }
+
+                return nAge;
+            }
+        }
 
         /// <summary>
         /// Phone number
@@ -254,6 +328,8 @@ namespace mapapp.data
             {
                 string o = "";
                 int digits = 0;
+                if (_phone == null)
+                    Phone = "";
                 string p = _phone.Trim();
 
                 foreach (char c in p)
@@ -416,9 +492,9 @@ namespace mapapp.data
         /// <summary>
         /// Latitude of voter's registered address
         /// </summary>
-        private float _lat;
+        private double _lat;
         [Column]
-        public float Latitude
+        public double Latitude
         {
             get { return _lat; }
             set
@@ -432,12 +508,29 @@ namespace mapapp.data
             }
         }
 
+        public string LatitudeString
+        {
+            get { return _lat.ToString(); }
+            set
+            {
+                double nParsed = 0.0;
+                if (value.Length > 0)
+                {
+                    if (double.TryParse(value, out nParsed))
+                        Latitude = nParsed;
+                }
+                Latitude = nParsed;
+            }
+        }
+
+
+
         /// <summary>
         /// Longitude of voter's registered address
         /// </summary>
-        private float _long;
+        private double _long;
         [Column]
-        public float Longitude
+        public double Longitude
         {
             get { return _long; }
             set
@@ -450,6 +543,21 @@ namespace mapapp.data
                 }
             }
         }
+        public string LongitudeString
+        {
+            get { return _long.ToString(); }
+            set
+            {
+                double nParsed = 0;
+                if (value.Length > 0)
+                {
+                    if (double.TryParse(value, out nParsed))
+                        Longitude = nParsed;
+                }
+                Longitude = nParsed;
+            }
+        }
+
 
         /// <summary>
         /// This is used set the Latitude and Longitude from a string in the XML loading process
@@ -473,26 +581,11 @@ namespace mapapp.data
                     double.TryParse(latlong[0], out lat);
                     double.TryParse(latlong[1], out lon);
                 }
-                Latitude = (float)lat;
-                Longitude = (float)lon;
+                Latitude = lat;
+                Longitude = lon;
             }
         }
 
-        /*
-        private EntityRef<VoterUpdateInfo> _voterUpdate;
-        [Association(Storage = "_voterUpdate", ThisKey = "VoterID", OtherKey = "VoterID")]
-        public VoterUpdateInfo VoterUpdates
-        {
-            get { return this._voterUpdate.Entity; }
-            set 
-            {
-                NotifyPropertyChanging("VoterUpdates");
-                this._voterUpdate.Entity = value;
-                // TODO: Set any information we already have into the VoterUpdate if this is a clean VoterUpdate 
-                NotifyPropertyChanged("VoterUpdates");
-            }
-        }
-         */
         /// <summary>
         /// Opt-in email address for voter
         /// </summary>
