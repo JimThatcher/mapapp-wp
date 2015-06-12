@@ -17,6 +17,7 @@
     shell:SystemTray.IsVisible="True" >
     <phone:PhoneApplicationPage.Resources>
         <local:BoolOpaqueConverter x:Key="IsUpdatedConverter" />
+        <local:BoolVizConverter x:Key="IsEnabledConverter" />
         <local:PartyBackgroundBrushConverter x:Key="PartyBgBrushConverter" />
         <local:PartyForegroundBrushConverter x:Key="PartyFgBrushConverter" />
     </phone:PhoneApplicationPage.Resources>

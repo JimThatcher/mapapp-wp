@@ -35,8 +35,7 @@ namespace mapapp
         private Mutex _voterFileMutex = new Mutex(false, "VoterFileMutex");
         private bool _dataLoaded = false;
         private bool _dataRequested = false;
-        // TODO: Make this into a setting that can be changed by a user
-        private string _baseDataUrl = "http://supershare1.azurewebsites.net/sheets/0";
+        private string _dataRelativeUrl = "/sheets/0";
         private string _baseLoginUrl = "http://supershare1.azurewebsites.net/login/code?code=";
 
         public DataManagementPage()
@@ -44,24 +43,24 @@ namespace mapapp
             InitializeComponent();
             IsolatedStorageFile isf = IsolatedStorageFile.GetUserStoreForApplication();
             txt_CampaignID.Text = App.thisApp._settings.GetSetting<string>("userid");
+            // Add event listener to catch changes to state of HasUpdates
+            App.thisApp.PropertyChanged += thisApp_PropertyChanged;
             if (isf != null)
             {
                 string voterFile = "";
                 bool voterFileExists = false;
                 if (App.thisApp._settings.DbStatus == DbState.Loaded)
                 {
-                    // TODO: Add setting (or check of database) indicating whether changes have been made to local database that have not been uploaded
                     if (App.thisApp.DbHasUpdates())
+                    {
                         btnUpload.IsEnabled = true;
+                        btnDownload.IsEnabled = false;
+                        App.thisApp.PostUpdate();
+                    }
                 }
                 else
                 {
-                    if (isf.FileExists("voters.xml"))
-                    {
-                        voterFile = "voters.xml";
-                        voterFileExists = true;
-                    }
-                    else if (isf.FileExists("voters.csv"))
+                    if (isf.FileExists("voters.csv"))
                     {
                         voterFile = "voters.csv";
                         voterFileExists = true;
@@ -73,12 +72,26 @@ namespace mapapp
                     }
                     if (voterFileExists)
                     {
-                        MessageBoxResult result = MessageBox.Show("Voter file exists. Do you want to load it?", "Use existing data", MessageBoxButton.OKCancel);
-                        if (result == MessageBoxResult.OK)
-                        {
-                            App.thisApp.LoadDatabaseFromFile(voterFile);
-                        }
+                        App.thisApp.LoadDatabaseFromFile(voterFile);
                     }
+                    else if (txt_CampaignID.Text.Length > 0)
+                    {
+                        btnDownload.IsEnabled = true;
+                    }
+                }
+            }
+        }
+
+        void thisApp_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "HasUpdates")
+            {
+                // There status of updates to the database has changed
+                if (!App.thisApp.DbHasUpdates())
+                {
+                    btnUpload.IsEnabled = false;
+                    if (txt_CampaignID.Text.Length > 0)
+                        btnDownload.IsEnabled = true;
                 }
             }
         }
@@ -87,19 +100,22 @@ namespace mapapp
         {
             if (txt_CampaignID.Text.Length > 0)
             {
-                // txtStatus.Text = "Signed in.";
                 txtMessage.Text = "Click \'get voter file\' to download.";
-                btnDownload.IsEnabled = true;
-                // TODO: track upload status in app settings
-                // btnUpload.IsEnabled = true;
+                if (!App.thisApp.DbHasUpdates())
+                {
+                    btnDownload.IsEnabled = true;
+                }
+                else
+                {
+                    btnUpload.IsEnabled = true;
+                    btnDownload.IsEnabled = false;
+                }
                 txtMessage.FontWeight = FontWeights.Normal;
             }
             else
             {
-                // txtStatus.Text = "Not signed in.";
                 txtMessage.Text = "Enter your Campaign ID to download voter file.";
                 btnDownload.IsEnabled = false;
-                // btnUpload.IsEnabled = false;
             }
         }
 
@@ -114,12 +130,12 @@ namespace mapapp
             {
                 if (!App.thisApp._settings.GetSetting<string>("userid").Equals(txt_CampaignID.Text))
                 {
-                    // The user iD has changed, so don't use the authkey anymore
+                    // The user ID has changed, so don't use the authkey anymore
                     App.thisApp._settings.UpdateSetting("authkey", "");
                     App.thisApp._settings.DbStatus = DbState.Unknown;
+                    // TODO: Determine if we should delete existing DB at this point or wait until a new voter file is downloaded
                 }
                 // We don't have an auth key, so we need to see if we can get one
-                // App.thisApp._settings.UpdateSetting("userid", txt_CampaignID.Text);
                 if (App.thisApp._settings.GetSetting<string>("authkey") == "")
                 {
                     try
@@ -127,7 +143,6 @@ namespace mapapp
                         Uri authUri = new Uri(_baseLoginUrl + txt_CampaignID.Text);
                         WebClient webClient = new WebClient();
                         webClient.UploadStringCompleted += new UploadStringCompletedEventHandler(webClient_UploadAuthCompleted);
-                        webClient.UploadProgressChanged += new UploadProgressChangedEventHandler(webClient_UploadProgressChanged);
                         webClient.UploadStringAsync(authUri, "POST", "");
                     }
                     catch (Exception ex)
@@ -139,7 +154,7 @@ namespace mapapp
                 {
                     try
                     {
-                        Uri voterListUri = new Uri(_baseDataUrl);
+                        Uri voterListUri = new Uri(App.thisApp._settings.UploadUrl);
                         WebClient webClient = new WebClient();
                         webClient.Headers[HttpRequestHeader.Authorization] = "bearer " + App.thisApp._settings.GetSetting<string>("authkey");
                         webClient.DownloadStringCompleted += new DownloadStringCompletedEventHandler(webClient_DownloadVoterListCompleted);
@@ -202,6 +217,7 @@ namespace mapapp
                             authKey = authResult.AuthToken;
                             App.thisApp._settings.UpdateSetting("authkey", authResult.AuthToken);
                             App.thisApp._settings.UpdateSetting("userid", txt_CampaignID.Text);
+                            App.thisApp._settings.UploadUrl = authResult.Server + _dataRelativeUrl;
                         }
                     }
                 }
@@ -212,7 +228,7 @@ namespace mapapp
                 {
                     try
                     {
-                        Uri voterListUri = new Uri(_baseDataUrl);
+                        Uri voterListUri = new Uri(App.thisApp._settings.UploadUrl);
                         WebClient webClient = new WebClient();
                         webClient.Headers[HttpRequestHeader.Authorization] = "bearer " + App.thisApp._settings.GetSetting<string>("authkey");
                         webClient.DownloadStringCompleted += new DownloadStringCompletedEventHandler(webClient_DownloadVoterListCompleted);
@@ -279,8 +295,7 @@ namespace mapapp
                     {
                         fileName = "voters.xml";
                     }
-                    // TODO: This will need to be adjusted to allow for loading of data with arbitrary field order
-                    else if (e.Result.Substring(0, 5).ToLower().StartsWith("recid") || e.Result.Substring(0, 5).ToLower().StartsWith("redid"))
+                    else if (e.Result.Substring(0, 80).Contains(',')) // There is at least one comma in the first 80 characters, so we will assume its a CSV
                     {
                         fileName = "voters.csv";
                     }
@@ -303,13 +318,12 @@ namespace mapapp
                         streamVoterFile.Write(byteArray, 0, byteArray.Length);
                         streamVoterFile.Close();
                         _bGotVoters = true;
+                        App.thisApp._settings.DbStatus = DbState.Invalid;
 
-                        // Load voter data from newly downloaded voters.xml
+                        // TODO: Do some work to validate that this is a valid voter data file
+                        // Load voter data from newly downloaded voters.csv
                         App.thisApp.LoadDatabaseFromFile(fileName);
                         WebClient client = sender as WebClient;
-                        // TODO: Do some work to validate that this is a valid voter data file
-
-                        App.thisApp._settings.UploadUrl = _baseDataUrl;
                         App.thisApp._settings.LastUpdated = client.ResponseHeaders["Date"];
                     }
                     progBar.Value = progBar.Maximum;
@@ -369,67 +383,11 @@ namespace mapapp
             }
             else
             {
-                string updateFileName = App.thisApp.CreateUpdateFile();
-                IsolatedStorageFile _iso = IsolatedStorageFile.GetUserStoreForApplication();
-
-                IsolatedStorageFileStream updateStream = _iso.OpenFile(updateFileName, System.IO.FileMode.Open);
-
-                try
-                {
-                    Uri voterListUri = new Uri(App.thisApp._settings.UploadUrl);
-
-                    string stReportText = "";
-                    StreamReader srUpdate = new StreamReader(updateStream);
-                    stReportText = srUpdate.ReadToEnd();
-                    WebClient webClient = new WebClient();
-                    webClient.Headers[HttpRequestHeader.ContentType] = "application/text";
-                    webClient.Headers[HttpRequestHeader.ContentLength] = stReportText.Length.ToString();
-                    webClient.Headers[HttpRequestHeader.Authorization] = "bearer " + App.thisApp._settings.GetSetting<string>("authkey");
-                    webClient.UploadStringCompleted += new UploadStringCompletedEventHandler(webClient_UploadStringCompleted);
-                    webClient.UploadProgressChanged += new UploadProgressChangedEventHandler(webClient_UploadProgressChanged);
-                    webClient.UploadStringAsync(voterListUri, "POST", stReportText);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine(ex.ToString());
-                }
-
-                
                 progBar.IsEnabled = true;
                 progBar.IsIndeterminate = true;
                 progBar.Visibility = System.Windows.Visibility.Visible;
+                App.thisApp.PostUpdate();
             }
         }
-
-        void webClient_UploadStringCompleted(object sender, UploadStringCompletedEventArgs e)
-        {
-            string size = "0";
-            try
-            {
-                if (sender is WebClient)
-                {
-                    WebClient wc = sender as WebClient;
-                    if (wc.ResponseHeaders != null && wc.ResponseHeaders[HttpRequestHeader.ContentLength] != null)
-                        size = wc.ResponseHeaders[HttpRequestHeader.ContentLength];
-                    // TODO: Figure out how to test for succeeded - parse from response JSON if needed
-                    App.thisApp._settings.UpdateSetting("lastsync", DateTime.Now);
-                }
-                App.Log(string.Format("Uploaded {0} bytes. Response is: {1}", size, e.Result));
-            }
-            catch (Exception ex)
-            {
-                App.Log("Problem logging results of upload: " + ex.ToString());
-            }
-            if (this.NavigationService.CanGoBack)
-                this.NavigationService.GoBack();
-        }
-
-        private void webClient_UploadProgressChanged(object sender, UploadProgressChangedEventArgs e)
-        {
-            progBar.IsIndeterminate = false;
-            progBar.Value = e.ProgressPercentage;
-            System.Diagnostics.Debug.WriteLine("Upload in progress ... " + e.ProgressPercentage.ToString() + " % complete, " + e.BytesReceived.ToString() + " bytes received.");
-        }
-
     }
 }

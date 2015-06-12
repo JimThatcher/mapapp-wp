@@ -181,9 +181,11 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Images\appbar.back.rest.png" />
     <Content Include="Images\appbar.cancel.rest.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="Images\appbar.next.rest.png" />
     <Content Include="Images\appbar.oddeven.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

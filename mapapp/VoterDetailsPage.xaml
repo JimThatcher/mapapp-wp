@@ -14,7 +14,7 @@
     Foreground="{StaticResource PhoneForegroundBrush}"
     SupportedOrientations="Portrait" Orientation="Portrait"
     mc:Ignorable="d" d:DesignHeight="768" d:DesignWidth="480"
-    shell:SystemTray.IsVisible="True" Loaded="PhoneApplicationPage_Loaded">
+    shell:SystemTray.IsVisible="True" Loaded="PhoneApplicationPage_Loaded" BackKeyPress="PhoneApplicationPage_BackKeyPress">
 
     <phone:PhoneApplicationPage.Resources>
         <local:ResultListConverter x:Key="ResultListConverter" />
@@ -46,18 +46,18 @@
                         <TextBlock FontSize="{StaticResource PhoneFontSizeMedium}" Height="Auto" Foreground="{Binding Party, Converter={StaticResource PartyFgBrushConverter}}" 
                                            Name="txtVoterName" Text="{Binding FullName}" Width="380" Padding="10,2" />
                         <TextBlock FontSize="{StaticResource PhoneFontSizeMedium}" Height="Auto" Foreground="{Binding Party, Converter={StaticResource PartyFgBrushConverter}}" 
-                                           Name="txtPrimary" Width="60" Text="{Binding PrimaryVoteHistory}" />
+                                           Name="txtPrimary" Width="60" Padding="10,2"  Text="{Binding PrimaryVoteHistory}" />
                     </StackPanel>
                     <StackPanel Height="Auto" Name="pnlStreetHistory" Width="440" Orientation="Horizontal">
                         <TextBlock FontSize="{StaticResource PhoneFontSizeMedium}"  Height="Auto" Name="txtAddress" Text="{Binding Address}" Width="380" Padding="10,2" />
-                        <TextBlock FontSize="{StaticResource PhoneFontSizeMedium}"  Height="Auto" Name="txtGeneral" Width="60" Text="{Binding GeneralVoteHistory}" />
+                            <TextBlock FontSize="{StaticResource PhoneFontSizeMedium}"  Height="Auto" Name="txtGeneral" Width="60" Padding="10,2" Text="{Binding GeneralVoteHistory}" />
                     </StackPanel>
                     <StackPanel Height="Auto" Name="pnlCityPrecinct" Width="440" Orientation="Horizontal">
                         <TextBlock Height="28" Name="txtCity" Text="{Binding City}" Width="227" Padding="10,2" />
                         <TextBlock Height="28" Name="txtPrecinct" Text="{Binding Precinct}" Width="212" Padding="10,2" />
                     </StackPanel>
                     <StackPanel Height="Auto" Name="pnlPhone" Width="440" Orientation="Horizontal">
-                        <TextBlock Height="28" Name="txtPhone" Text="{Binding PhoneFormatted}" Width="227" Padding="10,2" />
+                            <TextBlock Height="28" Name="txtPhone" Text="{Binding PhoneFormatted}" Width="227" Padding="10,2" />
                         <TextBlock Height="28" Name="txtSomething" Text="" Width="212" Padding="10,2" />
                     </StackPanel>
                     <StackPanel Height="86" Name="pnlEmail" Width="440" Orientation="Horizontal">
@@ -103,7 +103,7 @@
                         </StackPanel>
                         <StackPanel Height="210" Name="pnlNotes" Width="440" Orientation="Horizontal">
                             <TextBlock Height="40" Name="lblNotes" Text="notes" Width="81" Padding="10,2" VerticalAlignment="Top" Margin="0,20,0,0" />
-                            <TextBox Height="210"  Name="txtComments" Text="{Binding Comment, Mode=TwoWay}" Width="352" InputScope="Text" TextWrapping="Wrap"/>
+                            <TextBox Height="210"  Name="txtComments" Text="{Binding Comments, Mode=TwoWay}" Width="352" InputScope="Text" TextWrapping="Wrap"/>
                         </StackPanel>
                     </StackPanel>
                 </StackPanel>

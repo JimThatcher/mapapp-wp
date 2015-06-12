@@ -14,15 +14,19 @@ using System.Globalization;
 using System.Windows.Data;
 using System.ComponentModel;
 using Telerik.Windows.Data;
+using Microsoft.Phone.Shell;
+
 
 
 namespace mapapp
 {
+
     public partial class HouseListPage : PhoneApplicationPage
     {
-        CollectionViewSource cvsVoters = null;
-        SortDescription sortOnHouseNum;
-        GroupDescription groupOddEven;
+        GenericGroupDescriptor<PushpinModel, string> groupByStreet;
+        GenericSortDescriptor<PushpinModel, int> sortByHouseNumber;
+
+        public bool EnableOddEven = false;
 
         public HouseListPage()
         {
@@ -30,10 +34,18 @@ namespace mapapp
 
             lstVoters.GroupPickerItemTap += new EventHandler<Telerik.Windows.Controls.GroupPickerItemTapEventArgs>(lstVoters_GroupPickerItemTap);
 
-            GenericGroupDescriptor<PushpinModel, string> groupByStreet = new GenericGroupDescriptor<PushpinModel, string>(voter => voter.Street);
+            groupByStreet = new GenericGroupDescriptor<PushpinModel, string>(voter => voter.Street);
             this.lstVoters.GroupDescriptors.Add(groupByStreet);
-            GenericSortDescriptor<PushpinModel, int> sortByHouseNumber = new GenericSortDescriptor<PushpinModel, int>(voter => voter.HouseNum);
+            sortByHouseNumber = new GenericSortDescriptor<PushpinModel, int>(voter => voter.HouseNum);
+            sortByHouseNumber.SortMode = ListSortMode.Ascending;
             this.lstVoters.SortDescriptors.Add(sortByHouseNumber);
+            EnableOddEven = (App.VotersViewModel.StreetList.Count <= 1);
+
+            ApplicationBarIconButton btnOddEven = ApplicationBar.Buttons[2] as ApplicationBarIconButton;
+            if (btnOddEven != null)
+            {
+                btnOddEven.IsEnabled = EnableOddEven;
+            }
             /*
             GenericFilterDescriptor<PushpinModel> filterLegRaces = new GenericFilterDescriptor<PushpinModel>((PushpinModel voter) =>
             {
@@ -59,16 +71,16 @@ namespace mapapp
 
         private void ApplicationBarIconButtonSortUp_Click(object sender, EventArgs e)
         {
-            // cvsVoters.SortDescriptions.Clear();
-            // sortOnHouseNum.Direction = ListSortDirection.Ascending;
-            // cvsVoters.SortDescriptions.Add(sortOnHouseNum);
+            lstVoters.SortDescriptors.Clear();
+            sortByHouseNumber.SortMode = ListSortMode.Ascending;
+            lstVoters.SortDescriptors.Add(sortByHouseNumber);
         }
 
         private void ApplicationBarIconButtonSortDown_Click(object sender, EventArgs e)
         {
-            // cvsVoters.SortDescriptions.Clear();
-            // sortOnHouseNum.Direction = ListSortDirection.Descending;
-            // cvsVoters.SortDescriptions.Add(sortOnHouseNum);
+            lstVoters.SortDescriptors.Clear();
+            sortByHouseNumber.SortMode = ListSortMode.Descending;
+            lstVoters.SortDescriptors.Add(sortByHouseNumber);
         }
 
         private void ApplicationBarIconButtonSortOddEven_Click(object sender, EventArgs e)
@@ -84,7 +96,7 @@ namespace mapapp
             if (this.lstVoters.SelectedItem is PushpinModel)
             {
                 PushpinModel _pin = this.lstVoters.SelectedItem as PushpinModel;
-                App.thisApp.SelectedHouse = _pin.VoterFile;
+                App.thisApp.SelectedHouse = _pin;
                 this.NavigationService.Navigate(new Uri("/VoterDetailsPage.xaml", UriKind.Relative));
             }
         }
@@ -122,6 +134,75 @@ namespace mapapp
             if (value is double)
                 return ((double) value < 1.0) ? true : false;
             return false;
+        }
+    }
+    public class PartyBackgroundBrushConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            Brush _bg = new SolidColorBrush(Colors.White);
+            if ((value is int?) && (targetType == typeof(Brush)))
+            {
+                int partyNum = (int)value;
+                switch (partyNum)
+                {
+                    case 1:
+                        _bg = new SolidColorBrush(Colors.Red);
+                        break;
+                    case 2:
+                        _bg = new SolidColorBrush(Color.FromArgb(0xff, 0xff, 0x88, 0x88));
+                        break;
+                    case 3:
+                        _bg = new SolidColorBrush(Colors.Purple);
+                        break;
+                    case 4:
+                        _bg = new SolidColorBrush(Color.FromArgb(0xff, 0x88, 0x88, 0xff));
+                        break;
+                    case 5:
+                        _bg = new SolidColorBrush(Colors.Blue);
+                        break;
+                    case 6:
+                        _bg = new SolidColorBrush(Colors.Black);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            return _bg;
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return 0;
+        }
+    }
+
+    public class PartyForegroundBrushConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            Brush _fg = new SolidColorBrush(Colors.Black);
+            if ((value is int?) && (targetType == typeof(Brush)))
+            {
+                int partyNum = (int)value;
+                switch (partyNum)
+                {
+                    case 1:
+                    case 2:
+                    case 3:
+                    case 4:
+                    case 5:
+                    case 6:
+                        _fg = new SolidColorBrush(Colors.White);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            return _fg;
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return 0;
         }
     }
 

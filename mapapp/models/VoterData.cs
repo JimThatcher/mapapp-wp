@@ -329,7 +329,10 @@ namespace mapapp.data
                 string o = "";
                 int digits = 0;
                 if (_phone == null)
-                    Phone = "";
+                {
+                    _phone = "";
+                    return o;
+                }
                 string p = _phone.Trim();
 
                 foreach (char c in p)
