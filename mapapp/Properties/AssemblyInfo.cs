@@ -6,11 +6,11 @@ using System.Resources;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Voter Map")]
+[assembly: AssemblyTitle("canvass map")]
 [assembly: AssemblyDescription("Find your voters on an interactive map, and track your interactions with voters.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Tech Roanoke")]
-[assembly: AssemblyProduct("Voter Map")]
+[assembly: AssemblyProduct("Canvass Map")]
 [assembly: AssemblyCopyright("Copyright © Tech Roanoke 2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

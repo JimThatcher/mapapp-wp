@@ -28,7 +28,7 @@
 
         <!--TitlePanel contains the name of the application and page title-->
         <StackPanel x:Name="TitlePanel" Grid.Row="0" Margin="0">
-            <TextBlock x:Name="ApplicationTitle" Text="voter map" Style="{StaticResource PhoneTextNormalStyle}" Margin="4,0" />
+            <TextBlock x:Name="ApplicationTitle" Text="canvass map" Style="{StaticResource PhoneTextNormalStyle}" Margin="4,0" />
         </StackPanel>
 
         <!--ContentPanel - place additional content here-->

@@ -30,7 +30,7 @@
 
         <!--TitlePanel-->
         <StackPanel x:Name="TitlePanel" Margin="12,17,0,0">
-            <TextBlock x:Name="ApplicationTitle" Text="VOTER MAP" Style="{StaticResource PhoneTextNormalStyle}"/>
+            <TextBlock x:Name="ApplicationTitle" Text="CANVASS MAP" Style="{StaticResource PhoneTextNormalStyle}"/>
             <TextBlock x:Name="PageTitle" Text="Voter List" Margin="9,-15,0,0" Style="{StaticResource PhoneTextExtraLargeStyle}"/>
         </StackPanel>
 
