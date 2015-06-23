@@ -86,7 +86,7 @@ namespace mapapp
         {
             if (e.PropertyName == "HasUpdates")
             {
-                // There status of updates to the database has changed
+                // The status of updates to the database has changed
                 if (!App.thisApp.DbHasUpdates())
                 {
                     btnUpload.IsEnabled = false;
@@ -133,7 +133,6 @@ namespace mapapp
                     // The user ID has changed, so don't use the authkey anymore
                     App.thisApp._settings.UpdateSetting("authkey", "");
                     App.thisApp._settings.DbStatus = DbState.Unknown;
-                    // TODO: Determine if we should delete existing DB at this point or wait until a new voter file is downloaded
                 }
                 // We don't have an auth key, so we need to see if we can get one
                 if (App.thisApp._settings.GetSetting<string>("authkey") == "")
@@ -355,8 +354,9 @@ namespace mapapp
                     _dataLoaded = true;
                     _dataRequested = false;
                     App.thisApp._settings.UpdateSetting("downloaded", true);
-                    MessageBoxResult result = MessageBox.Show("Voter data download complete.", "Done", MessageBoxButton.OK);
-                    this.NavigationService.Navigate(new Uri("/MainPage.xaml", UriKind.Relative));
+                    // this.NavigationService.Navigate(new Uri("/MainPage.xaml", UriKind.Relative));
+                    if (this.NavigationService.CanGoBack)
+                        this.NavigationService.GoBack();
                 }
                 else
                 {

@@ -29,9 +29,9 @@ namespace mapapp
     
     public partial class MainPage : PhoneApplicationPage, INotifyPropertyChanged
     {
-        
-        internal const string Id = "AgTD8VcX7TSsg5eldqc4Pmhs0ST2L2GGYt4P9vPJZM9ijZTYsmzCmet-6Va1oX8d";
-        internal const string _AuthToken = "__HvqiXBgCqUsM_dihQVrQ"; // Map Service AppId = d9a77332-5306-49fc-b27e-964d7e87f46f
+
+        internal const string Id = "AqT5vauhadQst3zGT9LCa_C7exmR0MMdsvnNZn6CJXIGtRP3Vn7A006NKz7_hj9G"; //  "AgTD8VcX7TSsg5eldqc4Pmhs0ST2L2GGYt4P9vPJZM9ijZTYsmzCmet-6Va1oX8d";
+        // internal const string _AuthToken = "__HvqiXBgCqUsM_dihQVrQ"; // Map Service AppId = d9a77332-5306-49fc-b27e-964d7e87f46f
         private readonly CredentialsProvider _credentialsProvider = new ApplicationIdCredentialsProvider(Id);
         public static readonly GeoCoordinate DefaultLocation = new GeoCoordinate(47.662929, -122.115863);
         private const double DefaultZoomLevel = 16.0;
@@ -54,7 +54,7 @@ namespace mapapp
         private bool _showCar = false;
 
         // NOTE: This setting is used for testing during development, and should be set to true before compiling a production build
-        private bool _limitVoters = false;
+        private bool _limitVoters = true;
 
         // NOTE: These are rough estimates of the number of degrees covered in one mile
         // in the Redmond, WA area. These should be calculated based on actual latitude

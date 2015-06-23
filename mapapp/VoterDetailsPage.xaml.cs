@@ -266,6 +266,20 @@ namespace mapapp
                 this.NavigationService.GoBack();
         }
 
+        private void pnlVoterStatic_DoubleTap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            if (pnlCityPrecinct.Visibility == System.Windows.Visibility.Collapsed)
+            {
+                pnlCityPrecinct.Visibility = System.Windows.Visibility.Visible;
+                pnlPhone.Visibility = System.Windows.Visibility.Visible;
+            }
+            else
+            {
+                pnlCityPrecinct.Visibility = System.Windows.Visibility.Collapsed;
+                pnlPhone.Visibility = System.Windows.Visibility.Collapsed;
+            }
+        }
+
     }
 
     public class ResultListConverter : IValueConverter

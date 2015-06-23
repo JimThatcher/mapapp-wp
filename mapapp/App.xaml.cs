@@ -769,6 +769,55 @@ namespace mapapp
             _inViewVoters = new ObservableCollection<PushpinModel>();
         }
 
+        public void FillVoterList(List<PushpinModel> fillWith)
+        {
+            if (fillWith == null || fillWith.Count < 1)
+            {
+                VoterFileDataContext _voterDB = new VoterFileDataContext(string.Format(VoterFileDataContext.DBConnectionString, App.thisApp._settings.DbFileName));
+
+                if (!(App.thisApp._settings.DbStatus == DbState.Loaded) || !_voterDB.DatabaseExists())
+                {
+                    App.Log("Database not ready to load voters yet.");
+                    return;
+                }
+                App.VotersViewModel.StreetList.Clear();
+                App.VotersViewModel.VoterList.Clear();
+
+                IEnumerable<VoterFileEntry> data = from VoterFileEntry voter in _voterDB.AllVoters select voter;
+                foreach (VoterFileEntry _v in data)
+                {
+                    PushpinModel p = new PushpinModel(_v);
+                    if ((p.Street != null) && (!App.VotersViewModel.StreetList.Contains(p.Street)))
+                    {
+                        App.VotersViewModel.StreetList.Add(p.Street);
+                    }
+                    App.VotersViewModel.VoterList.Add(p);
+                }
+                _voterDB.Dispose(); 
+            }
+            else
+            {
+                App.VotersViewModel.StreetList.Clear();
+                App.VotersViewModel.VoterList.Clear();
+
+                foreach (PushpinModel p in fillWith)
+                {
+                    if ((p.Street != null) && (!App.VotersViewModel.StreetList.Contains(p.Street)))
+                    {
+                        App.VotersViewModel.StreetList.Add(p.Street);
+                    }
+                    App.VotersViewModel.VoterList.Add(p);
+                }
+            }
+            if (App.VotersViewModel.VoterList.Count <= 0)
+            {
+                App.Log("There are no voters in database!");
+                return;
+            }
+            else
+                System.Diagnostics.Debug.WriteLine("Found {0} voters in database.", App.VotersViewModel.VoterList.Count);
+        }
+
         private ObservableCollection<PushpinModel> _inViewVoters = new ObservableCollection<PushpinModel>();
 
         public ObservableCollection<PushpinModel> VoterList
